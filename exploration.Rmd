@@ -12,15 +12,15 @@ ship$HomePlanet <- factor(ship$HomePlanet)
 
 ship$CryoSleep <- factor(ship$HomePlanet)
 
-ship$Cabin1 <- mapply(function(x, y){if(nchar(x)==0){NULL}else{substr(x,y[2],y[3]-2)}},
+ship$Cabin1 <- as.character(mapply(function(x,y){if(nchar(x)==0){NULL}else{substr(x,y[2],y[3]-2)}},
                       ship$Cabin,
-                      regexec("(.*?)/(.*?)/(.*)", ship$Cabin))
-ship$Cabin2 <- mapply(function(x, y){if(nchar(x)==0){NULL}else{substr(x,y[3],y[4]-2)}},
+                      regexec("(.*?)/(.*?)/(.*)", ship$Cabin)))
+ship$Cabin2 <- as.character(mapply(function(x,y){if(nchar(x)==0){NULL}else{substr(x,y[3],y[4]-2)}},
                       ship$Cabin,
-                      regexec("(.*?)/(.*?)/(.*)", ship$Cabin))
-ship$Cabin3 <- mapply(function(x, y){if(nchar(x)==0){NULL}else{substr(x,y[4],nchar(x))}},
+                      regexec("(.*?)/(.*?)/(.*)", ship$Cabin)))
+ship$Cabin3 <- as.character(mapply(function(x,y){if(nchar(x)==0){NULL}else{substr(x,y[4],nchar(x))}},
                       ship$Cabin,
-                      regexec("(.*?)/(.*?)/(.*)", ship$Cabin))
+                      regexec("(.*?)/(.*?)/(.*)", ship$Cabin)))
 
 ship$Destination <- factor(ship$Destination)
 
