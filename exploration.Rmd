@@ -15,9 +15,9 @@ ship$IID <- as.integer(substr(ship$PassengerId,6,8))
 
 ship$GroupSize <- sapply(ship$GID, function(x){sum(ship$GID == x)})
 
-ship$HomePlanet <- factor(ship$HomePlanet)
+ship$HomePlanet <- as.factor(ship$HomePlanet)
 
-ship$CryoSleep <- factor(ship$CryoSleep)
+ship$CryoSleep <- as.logical(ship$CryoSleep)
 
 ship$Deck <- as.character(mapply(function(x,y){if(nchar(x)==0){NULL}else{substr(x,y[2],y[3]-2)}},
                       ship$Cabin,
@@ -29,19 +29,19 @@ ship$Side <- as.character(mapply(function(x,y){if(nchar(x)==0){NULL}else{substr(
                       ship$Cabin,
                       regexec("(.*?)/(.*?)/(.*)", ship$Cabin)))
 
-ship$Destination <- factor(ship$Destination)
+ship$Destination <- as.factor(ship$Destination)
 
 ship$Age <- as.integer(ship$Age)
 
-ship$VIP <- factor(ship$VIP)
+ship$VIP <- as.logical(ship$VIP)
 
-ship$Transported <- factor(ship$Transported)
+ship$Transported <- as.logical(ship$Transported)
 
 ```
 
 # Fixing missing data
 ```{r}
-ship[ship$CryoSleep=="True", c("RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck")] <- 0
+ship[ship$CryoSleep %in% T, c("RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck")] <- 0
 ```
 
 
