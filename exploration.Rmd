@@ -58,15 +58,6 @@ intersect(test$GID, ship$GID)
 
 `
 
-# Missing Cryosleep
-
-Using information of group's member to impute Cryosleep.
-
-```{r}
-length(unique(ship$GID[ship$CryoSleep==""])) == length(ship$GID[ship$CryoSleep==""])
-#view(ship[ship$CryoSleep =="",])
-nrow(ship[ship$CryoSleep =="",])
-```
 
 # Check Cabin for people with same GID
 ```{r}
