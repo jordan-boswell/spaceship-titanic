@@ -22,6 +22,17 @@ ship$Cabin3 <- as.character(mapply(function(x,y){if(nchar(x)==0){NULL}else{subst
                       ship$Cabin,
                       regexec("(.*?)/(.*?)/(.*)", ship$Cabin)))
 
+ship$gggID <- as.integer(substr(ship$PassengerId, 1,4))
+
+ship$iID <- as.integer(substr(ship$PassengerId,6,8))
+
+ship$gsize = NULL
+
+for(i in ship$gggID){
+ship$gsize <-c(ship$gsize,max(ship$iID[ship$gggID==i]))}
+
+
+
 ship$Destination <- factor(ship$Destination)
 
 ship$Age <- as.integer(ship$Age)
@@ -29,5 +40,6 @@ ship$Age <- as.integer(ship$Age)
 ship$VIP <- factor(ship$VIP)
 
 ship$Transported <- factor(ship$Transported)
+ship %>% group_by(gggID)
 ```
 
