@@ -35,5 +35,15 @@ ship$Age <- as.integer(ship$Age)
 ship$VIP <- factor(ship$VIP)
 
 ship$Transported <- factor(ship$Transported)
+
 ```
+
+Test and train's GID are disjoint.
+
+```{r}
+test <- read.csv("test.csv")
+test$GID <- as.integer(substr(test$PassengerId, 1,4))
+intersect(test$GID, ship$GID)
+```
+
 
