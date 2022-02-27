@@ -17,7 +17,7 @@ ship$GroupSize <- sapply(ship$GID, function(x){sum(ship$GID == x)})
 
 ship$HomePlanet <- as.factor(ship$HomePlanet)
 
-ship$CryoSleep <- as.logical(ship$CryoSleep)
+ship$CryoSleep <- as.factor(ship$CryoSleep)
 
 ship$Deck <- as.character(mapply(function(x,y){if(nchar(x)==0){NULL}else{substr(x,y[2],y[3]-2)}},
                       ship$Cabin,
@@ -28,6 +28,7 @@ ship$Num <- as.character(mapply(function(x,y){if(nchar(x)==0){NULL}else{substr(x
 ship$Side <- as.character(mapply(function(x,y){if(nchar(x)==0){NULL}else{substr(x,y[4],nchar(x))}},
                       ship$Cabin,
                       regexec("(.*?)/(.*?)/(.*)", ship$Cabin)))
+ship$Cabin <- sapply(ship$Cabin, function(x){if (x=="") NA else x})
 
 ship$Destination <- as.factor(ship$Destination)
 
@@ -54,25 +55,32 @@ test$GID <- as.integer(substr(test$PassengerId, 1,4))
 intersect(test$GID, ship$GID)
 ```
 
-Each group has  at most one person lost their cabin information.
-```{r}
-length(unique(ship$GID[ship$Cabin==""])) == length(ship$GID[ship$Cabin==""])
-#view(ship[ship$Cabin =="",])
-nrow(ship[ship$Cabin =="",])
 
+`
+
+# Missing Cryosleep
+
+Using information of group's member to impute Cryosleep.
+
+```{r}
+length(unique(ship$GID[ship$CryoSleep==""])) == length(ship$GID[ship$CryoSleep==""])
+#view(ship[ship$CryoSleep =="",])
+nrow(ship[ship$CryoSleep =="",])
 ```
 
-Impute Cabin missing for people belong to a group. After imputing, number of missing data  reduces from 199 to 99. Those passengers went by themselves.
+# Check Cabin for people with same GID
+```{r}
+c <- complete.cases(ship[,c("GID", "Cabin")])
 
-```{r, warning=F}
-for (i in 1:nrow(ship)){
-  if (ship$GroupSize[i] >1){
-    
-    ship$Cabin[i] = ship$Cabin[ship$GID==ship$GID[i] & ship$Cabin !=""]
-    
-    }
+for(i in 1: nrow(ship)){
+  if (c[i] == F) next
+  for(j in (i+1):nrow(ship)){
+    if(c[j] ==F) next
+    if(ship$GID[i]== ship$GID[j] & ship$Cabin[i] !=ship$Cabin[j])
+      print(paste0("Same GID; differ Cabin: ", i, ", ", j))
+    if(ship$Cabin[i] == ship$Cabin[j] & ship$GID[i] != ship$GID[j])
+      print(paste0("Same Cabin; different GID: ", i, ", ", j))
+  }
 }
 ```
-
-
 
