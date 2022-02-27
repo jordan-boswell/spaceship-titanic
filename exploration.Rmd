@@ -5,3 +5,29 @@ date: "2/26/2022"
 output: html_document
 ---
 
+```{r}
+ship <- read.csv("train.csv")
+
+ship$HomePlanet <- factor(ship$HomePlanet)
+
+ship$CryoSleep <- factor(ship$HomePlanet)
+
+ship$Cabin1 <- mapply(function(x, y){if(nchar(x)==0){NULL}else{substr(x,y[2],y[3]-2)}},
+                      ship$Cabin,
+                      regexec("(.*?)/(.*?)/(.*)", ship$Cabin))
+ship$Cabin2 <- mapply(function(x, y){if(nchar(x)==0){NULL}else{substr(x,y[3],y[4]-2)}},
+                      ship$Cabin,
+                      regexec("(.*?)/(.*?)/(.*)", ship$Cabin))
+ship$Cabin3 <- mapply(function(x, y){if(nchar(x)==0){NULL}else{substr(x,y[4],nchar(x))}},
+                      ship$Cabin,
+                      regexec("(.*?)/(.*?)/(.*)", ship$Cabin))
+
+ship$Destination <- factor(ship$Destination)
+
+ship$Age <- as.integer(ship$Age)
+
+ship$VIP <- factor(ship$VIP)
+
+ship$Transported <- factor(ship$Transported)
+```
+
