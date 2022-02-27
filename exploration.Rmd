@@ -5,6 +5,7 @@ date: "2/26/2022"
 output: html_document
 ---
 
+# Read data and format columns
 ```{r}
 ship <- read.csv("train.csv")
 
@@ -38,8 +39,14 @@ ship$Transported <- factor(ship$Transported)
 
 ```
 
-Test and train's GID are disjoint.
+# Fixing missing data
+```{r}
+ship[ship$CryoSleep=="True", c("RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck")] <- 0
+```
 
+
+# Other notes
+Test and train's GID are disjoint.
 ```{r}
 test <- read.csv("test.csv")
 test$GID <- as.integer(substr(test$PassengerId, 1,4))
