@@ -16,7 +16,7 @@ ship$GroupSize <- sapply(ship$GID, function(x){sum(ship$GID == x)})
 
 ship$HomePlanet <- factor(ship$HomePlanet)
 
-ship$CryoSleep <- factor(ship$HomePlanet)
+ship$CryoSleep <- factor(ship$CryoSleep)
 
 ship$Cabin1 <- as.character(mapply(function(x,y){if(nchar(x)==0){NULL}else{substr(x,y[2],y[3]-2)}},
                       ship$Cabin,
