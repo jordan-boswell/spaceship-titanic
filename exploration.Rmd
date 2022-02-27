@@ -1,0 +1,7 @@
+---
+title: "exploration"
+author: "Jordan Boswell and Thuy Nguyen"
+date: "2/26/2022"
+output: html_document
+---
+
