@@ -18,13 +18,13 @@ ship$HomePlanet <- factor(ship$HomePlanet)
 
 ship$CryoSleep <- factor(ship$CryoSleep)
 
-ship$Cabin1 <- as.character(mapply(function(x,y){if(nchar(x)==0){NULL}else{substr(x,y[2],y[3]-2)}},
+ship$Deck <- as.character(mapply(function(x,y){if(nchar(x)==0){NULL}else{substr(x,y[2],y[3]-2)}},
                       ship$Cabin,
                       regexec("(.*?)/(.*?)/(.*)", ship$Cabin)))
-ship$Cabin2 <- as.character(mapply(function(x,y){if(nchar(x)==0){NULL}else{substr(x,y[3],y[4]-2)}},
+ship$Num <- as.character(mapply(function(x,y){if(nchar(x)==0){NULL}else{substr(x,y[3],y[4]-2)}},
                       ship$Cabin,
                       regexec("(.*?)/(.*?)/(.*)", ship$Cabin)))
-ship$Cabin3 <- as.character(mapply(function(x,y){if(nchar(x)==0){NULL}else{substr(x,y[4],nchar(x))}},
+ship$Side <- as.character(mapply(function(x,y){if(nchar(x)==0){NULL}else{substr(x,y[4],nchar(x))}},
                       ship$Cabin,
                       regexec("(.*?)/(.*?)/(.*)", ship$Cabin)))
 
