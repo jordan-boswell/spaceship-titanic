@@ -65,7 +65,7 @@ c <- complete.cases(ship[,c("GID", "Cabin")])
 
 for(i in 1: nrow(ship)){
   if (c[i] == F) next
-  for(j in (i+1):nrow(ship)){
+  for(j in i:nrow(ship)){
     if(c[j] ==F) next
     if(ship$GID[i]== ship$GID[j] & ship$Cabin[i] !=ship$Cabin[j])
       print(paste0("Same GID; differ Cabin: ", i, ", ", j))
