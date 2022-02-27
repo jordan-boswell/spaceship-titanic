@@ -54,10 +54,26 @@ test$GID <- as.integer(substr(test$PassengerId, 1,4))
 intersect(test$GID, ship$GID)
 ```
 
-Impute Cabin missing for people belong to a group.
+Each group is lost at most one person's cabin information.
 ```{r}
+length(unique(ship$GID[ship$Cabin==""])) == length(ship$GID[ship$Cabin==""])
+view(ship[ship$Deck =="NULL",])
+```
+
+Impute Cabin missing for people belong to a group.
+
+```{r, warning=F}
 for (i in 1:nrow(ship)){
-  if (ship$IID[i] >1){ship$Cabin[i] = ship$Cabin[ship$GID==ship$GID[i]]}
+  if (ship$IID[i] >1){
+  
+    ship$Cabin[i] = ship$Cabin[ship$GID==ship$GID[i]][1]
+    ship$Deck[i] = ship$Deck[ship$GID==ship$GID[i]][1]
+    ship$Num[i] = ship$Num[ship$GID==ship$GID[i]][1]
+    ship$Side[i] = ship$Side[ship$GID==ship$GID[i]][1]
+    
+    }
 }
 ```
+
+
 
