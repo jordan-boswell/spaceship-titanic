@@ -57,10 +57,12 @@ intersect(test$GID, ship$GID)
 Each group has  at most one person lost their cabin information.
 ```{r}
 length(unique(ship$GID[ship$Cabin==""])) == length(ship$GID[ship$Cabin==""])
-view(ship[ship$Cabin =="NULL" & ship$GroupSize>1,])
+#view(ship[ship$Cabin =="",])
+nrow(ship[ship$Cabin =="",])
+
 ```
 
-Impute Cabin missing for people belong to a group.
+Impute Cabin missing for people belong to a group. After imputing, number of missing data  reduces from 199 to 99. Those passengers went by themselves.
 
 ```{r, warning=F}
 for (i in 1:nrow(ship)){
