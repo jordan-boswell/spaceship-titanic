@@ -5,12 +5,14 @@ date: "2/26/2022"
 output: html_document
 ---
 
+
 ```{r}
 library(rigr)
 library(tidyverse)
 library(randomForest)
 library(caret)
 ```
+
 
 # Read data and format columns
 ```{r}
@@ -47,10 +49,11 @@ ship$Transported <- as.logical(ship$Transported)
 
 ```
 
+
 # Fixing missing data
+## Cryosleep implies no spending
 ```{r}
 ship[ship$CryoSleep %in% T, c("RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck")] <- 0
-
 ```
 
 
@@ -151,8 +154,5 @@ pred <- predict(t, newdata= ship_test[complete.cases(ship_test),])>0.5
 
 ship_test$Transported[complete.cases(ship_test)] = pred
 ship_test$Transported[!complete.cases(ship_test)] = TRUE
-ship_test$Transported <- ifelse(ship_test$Transported == "TRUE","True", "False")
-#write.csv(ship_test[,c("PassengerId", "Transported")], quote= FALSE,row.names = FALSE,file = "submission.csv")
-```
-
+ship_test$Transported <- ifelse(ship_test$Transpor
 
