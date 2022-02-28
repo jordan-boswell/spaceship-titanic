@@ -53,7 +53,10 @@ ship$Transported <- as.logical(ship$Transported)
 # Fixing missing data
 ## Change empty strings to NA
 ```{r}
+ship$HomePlanet[ship$HomePlanet==""] <- NA
 ship$CryoSleep[ship$CryoSleep==""] <- NA
+ship$Destination[ship$Destination==""] <- NA
+ship$Name[ship$Name==""] <- NA
 ```
 
 ## Cryosleep implies 0 spending
