@@ -5,12 +5,6 @@ date: "2/26/2022"
 output: html_document
 ---
 
-```{r}
-library(rigr)
-library(tidyverse)
-library(randomForest)
-library(caret)
-```
 
 # Read data and format columns
 ```{r}
@@ -95,11 +89,36 @@ for(i in 1: nrow(ship)){
   if (cmplt[i] == FALSE) next
   for(j in i:nrow(ship)){
     if(cmplt[j] ==FALSE) next
-    if(ship$GID[i]!= ship$GID[j] & ship$Cabin[i] ==ship$Cabin[j])
+    if(ship$GID[i]= ship$GID[j] & ship$Cabin[i] ==ship$Cabin[j])
         print(paste0("Same Cabin; different GID: ", i, ", ", j, ship$Deck[i], ship$Deck[j]))
   }
 }
 ```
+
+## Hypothesis: People in the same group of at least 2 members live in the same Deck for cabins A, B, C
+
+```{r}
+cmplt <- complete.cases(ship[,c("GID", "Cabin")])
+deck <- NULL
+for(i in 1: nrow(ship)){
+  if (cmplt[i] == FALSE) next
+  for(j in i:nrow(ship)){
+    if(cmplt[j] ==FALSE) next
+    if(ship$GID[i]== ship$GID[j] & ship$Cabin[i] !=ship$Cabin[j])
+        deck <-c(deck,ship$Deck[i], ship$Deck[j])
+  }
+}
+
+count = 0
+for ( j in c("A","B","C","D","E","F", "G","T")){
+  for (i in 1: length(deck)){
+   
+  }
+   print(paste0("proportion of",j, "=" , sum(deck==j)/length(deck)))
+}
+
+```
+
 
 No one same cabin but different GID
 
