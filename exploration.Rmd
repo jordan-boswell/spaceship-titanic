@@ -51,13 +51,18 @@ ship$Transported <- as.logical(ship$Transported)
 
 
 # Fixing missing data
-## Cryosleep implies no spending
+## Change empty strings to NA
+```{r}
+ship$CryoSleep[ship$CryoSleep==""] <- NA
+```
+
+## Cryosleep implies 0 spending
 ```{r}
 ship[ship$CryoSleep %in% T, c("RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck")] <- 0
 ```
 
 
-# Other notes
+# Notes
 Test and train's GID are disjoint.
 ```{r}
 test <- read.csv("test.csv")
