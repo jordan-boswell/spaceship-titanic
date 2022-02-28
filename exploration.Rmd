@@ -152,7 +152,7 @@ pred <- predict(t, newdata= ship_test[complete.cases(ship_test),])>0.5
 ship_test$Transported[complete.cases(ship_test)] = pred
 ship_test$Transported[!complete.cases(ship_test)] = TRUE
 ship_test$Transported <- ifelse(ship_test$Transported == "TRUE","True", "False")
-write.csv(ship_test[,c("PassengerId", "Transported")], quote= FALSE,row.names = FALSE,file = "submission.csv")
+#write.csv(ship_test[,c("PassengerId", "Transported")], quote= FALSE,row.names = FALSE,file = "submission.csv")
 ```
 
 
