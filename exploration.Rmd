@@ -79,7 +79,7 @@ ship[ship$CryoSleep %in% T, c("RoomService", "FoodCourt", "ShoppingMall", "Spa",
 MAKE THIS A FUNCTION AND CALL
 ```{r}
 ship[ship$CryoSleep %in% T, c("RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck")] <- 0
-updateSpending()
+updateSpending(ship)
 ```
 
 ## Young children (Age <= 12) don't spend money
