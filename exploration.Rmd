@@ -46,7 +46,6 @@ ship$Age <- as.integer(ship$Age)
 ship$VIP <- as.logical(ship$VIP)
 
 ship$Transported <- as.logical(ship$Transported)
-
 ```
 
 
@@ -62,6 +61,20 @@ ship$Name[ship$Name==""] <- NA
 ## Cryosleep implies 0 spending
 ```{r}
 ship[ship$CryoSleep %in% T, c("RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck")] <- 0
+```
+
+## Young children (Age <= 12) don't spend money
+### Evidence
+```{r}
+spending <- ship$RoomService + ship$FoodCourt + ship$ShoppingMall + ship$Spa + ship$VRDeck
+for (age in 1:15){
+  print(paste0(100.0 * nrow(subset(ship, !is.na(Age) & Age==age & !is.na(spending) & spending==0)) / nrow(subset(ship, !is.na(Age) & Age==age & !is.na(spending))), "% of people age ", age, " have 0 total spending"))
+}
+```
+
+### Update
+```{r}
+ship[!is.na(ship$Age) & ship$Age <= 12, c("RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck")] <- 0
 ```
 
 
