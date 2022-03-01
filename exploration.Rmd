@@ -78,10 +78,33 @@ ship[!is.na(ship$Age) & ship$Age <= 12, c("RoomService", "FoodCourt", "ShoppingM
 ```
 
 
-# Notes
-Test and train's GID are disjoint.
+## Hypothesis: People in the same group of at least 2 members live in the same Deck for cabins A, B, C
+
 ```{r}
-test <- read.csv("test.csv")
-test$GID <- as.integer(substr(test$PassengerId, 1,4))
-intersect(test$GID, ship$GID)
+cmplt <- complete.cases(ship[,c("GID", "Cabin")])
+deck <- NULL
+for(i in 1: nrow(ship)){
+  if (cmplt[i] == FALSE) next
+  for(j in i:nrow(ship)){
+    if(cmplt[j] ==FALSE) next
+    if(ship$GID[i]== ship$GID[j] & ship$Cabin[i] !=ship$Cabin[j])
+        deck <-c(deck,ship$Deck[i], ship$Deck[j])
+  }
+}
 ```
+
+
+```{r}
+
+for ( j in c("A","B","C","D","E","F", "G","T")){
+  for (i in 1: length(deck)){
+   
+  }
+   print(paste0("proportion of",j, "=" , sum(deck==j)/length(deck)))
+}
+
+```
+
+
+
+0.2% of members of groups who live in cabin A share members with other cabin (Same with B, and C). Fill out the missing cabin for those who have other members live in cabin A,B, C.
