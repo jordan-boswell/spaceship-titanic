@@ -93,6 +93,7 @@ for (age in 1:15){
 }
 ```
 ### Update
+TODO: MAKE THIS A FUNCTION
 ```{r}
 updateSpendingOfChildren <- function(df){
  df[!is.na(df$Age) & df$Age <= 12, c("RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck")] <- 0
@@ -103,6 +104,24 @@ ship <- updateSpendingOfChildren(ship)
 ```
 
 ## Hypothesis: People in the same group of at least 2 members live in the same Deck for cabins A, B, C
+### Create Useful Columns
+TODO: MAKE THE LATTER PART OF THIS CODE A FUNCTION
+```{r}
+decks <- c("A", "B", "C", "D", "E", "F", "G", "T")
+for (deck in decks) {
+  ship[[paste0("num", deck)]] <- as.integer(0)
+}
+
+for (i in 1:nrow(ship)){
+  group_members <- subset(ship, GID == ship$GID[i] & IID != ship$IID[i])
+  for (deck in decks) {
+    ship[i, paste0("num", deck)] <- sum(!is.na(group_members$Deck) & group_members$Deck == deck)
+  }
+}
+
+rm(decks)
+```
+
 I THINK THIS SECTION NEEDS TO BE RETHOUGHT.  WHAT IF A GROUP HAS MEMBERS LIVING IN LOCATIONS x,x,x,x,y,y,z,q OR x,x,x,x,y?  WHAT ARE WE COUNTING?
 
 THIS IS WRONG.  SEE COMMENT.
