@@ -56,9 +56,9 @@ updateSpending <- function(df){
   allna <- rsna & fcna & smna & sna & vrdna
   df$Spending <- ifelse(allna, NA, ifelse(rsna, 0, df$RoomService) + ifelse(fcna, 0, df$FoodCourt) + ifelse(smna, 0, df$ShoppingMall) + ifelse(sna, 0, df$Spa) + ifelse(vrdna, 0, df$VRDeck))
   df$HasSpent <- df$Spending > 0
-  rm(rsna, fcna, smna, sna, vrdna, allna)
+  df
 }
-updateSpending(ship)
+ship <- updateSpending(ship)
 ```
 
 
@@ -73,25 +73,27 @@ ship$Name[ship$Name==""] <- NA
 ## Cryosleep implies 0 spending
 ### Evidence
 ```{r}
-ship[ship$CryoSleep %in% T, c("RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck")]
+table(ship[ship$CryoSleep %in% T, "HasSpent"])
 ```
 ### Update
-MAKE THIS A FUNCTION AND CALL
 ```{r}
-ship[ship$CryoSleep %in% T, c("RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck")] <- 0
-updateSpending(ship)
+updateCryoSpending <- function(df){
+  df[df$CryoSleep %in% T, c("RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck")] <- 0
+  df <- updateSpending(df)
+  df
+}
+ship <- updateCryoSpending(ship)
 ```
 
 ## Young children (Age <= 12) don't spend money
 ### Evidence
-FIX THIS
 ```{r}
-spending <- ship$Spending
 for (age in 1:15){
-  print(paste0(100.0 * nrow(subset(ship, !is.na(Age) & Age==age & !is.na(spending) & spending==0)) / nrow(subset(ship, !is.na(Age) & Age==age & !is.na(spending))), "% of people age ", age, " have 0 total spending"))
+  print(paste0(100.0 * nrow(subset(ship, !is.na(Age) & Age==age & !is.na(ship$Spending) & !ship$HasSpent)) / nrow(subset(ship, !is.na(Age) & Age==age & !is.na(ship$Spending))), "% of people age ", age, " have 0 total spending"))
 }
 ```
 ### Update
+TODO: MAKE THIS A FUNCTION
 ```{r}
 ship[!is.na(ship$Age) & ship$Age <= 12, c("RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck")] <- 0
 ```
@@ -128,11 +130,11 @@ for ( j in c("A","B","C","D","E","F", "G","T")){
 #  Spending- vip- Cryosleep:  0%  of people who NOT VIP, but spend some money sleep
 
 ```{r}
-table(ship$CryoSleep[ship$VIP =="FALSE" & spending >0])
+table(ship$CryoSleep[ship$VIP == F & ship$HasSpent])
 
 ```
 
 ```{r}
-ship[ship$VIP== "FALSE" & spending>0, "CryoSleep"] <- "False"
+ship[ship$VIP %in% F & ship$HasSpent, "CryoSleep"] <- F
 ```
 
