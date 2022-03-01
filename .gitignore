@@ -45,3 +45,5 @@ space-draft*
 *html
 pat*
 project*
+*bak
+.gitignore.bak
