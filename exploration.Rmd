@@ -77,12 +77,12 @@ table(ship[ship$CryoSleep %in% T, "HasSpent"])
 ```
 ### Update
 ```{r}
-updateCryoSpending <- function(df){
+updateSpendingOfCryo <- function(df){
   df[df$CryoSleep %in% T, c("RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck")] <- 0
   df <- updateSpending(df)
   df
 }
-ship <- updateCryoSpending(ship)
+ship <- updateSpendingOfCryo(ship)
 ```
 
 ## Young children (Age <= 12) don't spend money
@@ -93,9 +93,13 @@ for (age in 1:15){
 }
 ```
 ### Update
-TODO: MAKE THIS A FUNCTION
 ```{r}
-ship[!is.na(ship$Age) & ship$Age <= 12, c("RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck")] <- 0
+updateSpendingOfChildren <- function(df){
+ df[!is.na(df$Age) & df$Age <= 12, c("RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck")] <- 0
+ df <- updateSpending(df)
+ df
+}
+ship <- updateSpendingOfChildren(ship)
 ```
 
 ## Hypothesis: People in the same group of at least 2 members live in the same Deck for cabins A, B, C
