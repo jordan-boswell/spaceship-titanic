@@ -47,10 +47,18 @@ ship$VIP <- as.logical(ship$VIP)
 
 ship$Transported <- as.logical(ship$Transported)
 
-updateSpending <- function(){
-  ship$Spending <- ifelse(is.na(ship$RoomService), 0, ship$RoomService) + ifelse(is.na(ship$FoodCourt), 0, ship$FoodCourt) + ifelse(is.na(ship$ShoppingMall), 0, ship$ShoppingMall) + ifelse(is.na(ship$Spa), 0, ship$Spa) + ifelse(is.na(ship$VRDeck), 0, ship$VRDeck)
-  ship$HasSpent <- ship$Spending > 0
+updateSpending <- function(df){
+  rsna <- is.na(df$RoomService)
+  fcna <- is.na(df$FoodCourt)
+  smna <- is.na(df$ShoppingMall)
+  sna <- is.na(df$Spa)
+  vrdna <- is.na(df$VRDeck)
+  allna <- rsna & fcna & smna & sna & vrdna
+  df$Spending <- ifelse(allna, NA, ifelse(rsna, 0, df$RoomService) + ifelse(fcna, 0, df$FoodCourt) + ifelse(smna, 0, df$ShoppingMall) + ifelse(sna, 0, df$Spa) + ifelse(vrdna, 0, df$VRDeck))
+  df$HasSpent <- df$Spending > 0
+  rm(rsna, fcna, smna, sna, vrdna, allna)
 }
+updateSpending(ship)
 ```
 
 
@@ -68,14 +76,17 @@ ship$Name[ship$Name==""] <- NA
 ship[ship$CryoSleep %in% T, c("RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck")]
 ```
 ### Update
+MAKE THIS A FUNCTION AND CALL
 ```{r}
 ship[ship$CryoSleep %in% T, c("RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck")] <- 0
+updateSpending()
 ```
 
 ## Young children (Age <= 12) don't spend money
 ### Evidence
+FIX THIS
 ```{r}
-spending <- ifelse(is.na(ship$RoomService), 0, ship$RoomService) + ifelse(is.na(ship$FoodCourt), 0, ship$FoodCourt) + ifelse(is.na(ship$ShoppingMall), 0, ship$ShoppingMall) + ifelse(is.na(ship$Spa), 0, ship$Spa) + ifelse(is.na(ship$VRDeck), 0, ship$VRDeck)
+spending <- ship$Spending
 for (age in 1:15){
   print(paste0(100.0 * nrow(subset(ship, !is.na(Age) & Age==age & !is.na(spending) & spending==0)) / nrow(subset(ship, !is.na(Age) & Age==age & !is.na(spending))), "% of people age ", age, " have 0 total spending"))
 }
