@@ -14,6 +14,7 @@ library(caret)
 ```
 
 
+
 # Read data and format columns
 ```{r}
 ship <- read.csv("train.csv")
@@ -121,6 +122,19 @@ for(i in 1: nrow(ship)){
     if(cmplt[j] ==FALSE) next
     if(ship$GID[i]!= ship$GID[j] & ship$Cabin[i] ==ship$Cabin[j])
         print(paste0("Same Cabin; different GID: ", i, ", ", j, ship$Deck[i], ship$Deck[j]))
+
+
+## Hypothesis: People in the same group of at least 2 members live in the same Deck for cabins A, B, C
+
+```{r}
+cmplt <- complete.cases(ship[,c("GID", "Cabin")])
+deck <- NULL
+for(i in 1: nrow(ship)){
+  if (cmplt[i] == FALSE) next
+  for(j in i:nrow(ship)){
+    if(cmplt[j] ==FALSE) next
+    if(ship$GID[i]== ship$GID[j] & ship$Cabin[i] !=ship$Cabin[j])
+        deck <-c(deck,ship$Deck[i], ship$Deck[j])
   }
 }
 ```
@@ -161,6 +175,15 @@ ship_test$VIP <- as.logical(ship_test$VIP)
 
 ship_test[ship_test$CryoSleep %in% T, c("RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck")] <- 0
 
+```{r}
+
+for ( j in c("A","B","C","D","E","F", "G","T")){
+  for (i in 1: length(deck)){
+   
+  }
+   print(paste0("proportion of",j, "=" , sum(deck==j)/length(deck)))
+}
+
 ```
 
 
@@ -176,4 +199,6 @@ pred <- predict(t, newdata= ship_test[complete.cases(ship_test),])>0.5
 ship_test$Transported[complete.cases(ship_test)] = pred
 ship_test$Transported[!complete.cases(ship_test)] = TRUE
 ship_test$Transported <- ifelse(ship_test$Transpor
+=======
+0.2% of members of groups who live in cabin A share members with other cabin (Same with B, and C). Fill out the missing cabin for those who have other members live in cabin A,B, C.
 
