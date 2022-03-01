@@ -103,18 +103,25 @@ ship <- updateSpendingOfChildren(ship)
 ```
 
 ## Hypothesis: People in the same group of at least 2 members live in the same Deck for cabins A, B, C
+I THINK THIS SECTION NEEDS TO BE RETHOUGHT.  WHAT IF A GROUP HAS MEMBERS LIVING IN LOCATIONS x,x,x,x,y,y,z,q OR x,x,x,x,y?  WHAT ARE WE COUNTING?
+
+THIS IS WRONG.  SEE COMMENT.
 ```{r}
 cmplt <- complete.cases(ship[,c("GID", "Cabin")])
 deck <- NULL
 for(i in 1: nrow(ship)){
   if (cmplt[i] == FALSE) next
   for(j in i:nrow(ship)){
-    if(cmplt[j] ==FALSE) next
-    if(ship$GID[i]== ship$GID[j] & ship$Cabin[i] !=ship$Cabin[j])
+    if(cmplt[j] == FALSE) next
+    if(ship$GID[i] == ship$GID[j] & ship$Cabin[i] != ship$Cabin[j])
+        # YOU ARE ADDING THE SAME PERSON'S DECK MULTIPLE TIMES:
         deck <-c(deck,ship$Deck[i], ship$Deck[j])
+
   }
 }
 ```
+
+THIS DENOMINATOR ( length(deck) ) IS NOT USEFUL.
 ```{r}
 
 for ( j in c("A","B","C","D","E","F", "G","T")){
@@ -125,20 +132,15 @@ for ( j in c("A","B","C","D","E","F", "G","T")){
 }
 
 ```
-
-
-
 0.2% of members of groups who live in cabin A share members with other cabin (Same with B, and C). Fill out the missing cabin for those who have other members live in cabin A,B, C.
 
-
-#  Spending- vip- Cryosleep:  0%  of people who NOT VIP, but spend some money sleep
-
+##  Spending- vip- Cryosleep:  0%  of people who NOT VIP, but spend some money sleep
+### Evidence
 ```{r}
 table(ship$CryoSleep[ship$VIP == F & ship$HasSpent])
 
 ```
-
+### Update
 ```{r}
 ship[ship$VIP %in% F & ship$HasSpent, "CryoSleep"] <- F
 ```
-
