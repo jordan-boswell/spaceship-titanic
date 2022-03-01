@@ -26,7 +26,7 @@ ship$GroupSize <- sapply(ship$GID, function(x){sum(ship$GID == x)})
 
 ship$HomePlanet <- as.factor(ship$HomePlanet)
 
-ship$CryoSleep <- as.factor(ship$CryoSleep)
+ship$CryoSleep <- as.logical(ship$CryoSleep)
 
 ship$Deck <- as.character(mapply(function(x,y){if(nchar(x)==0){NULL}else{substr(x,y[2],y[3]-2)}},
                       ship$Cabin,
@@ -46,6 +46,11 @@ ship$Age <- as.integer(ship$Age)
 ship$VIP <- as.logical(ship$VIP)
 
 ship$Transported <- as.logical(ship$Transported)
+
+updateSpending <- function(){
+  ship$Spending <- ifelse(is.na(ship$RoomService), 0, ship$RoomService) + ifelse(is.na(ship$FoodCourt), 0, ship$FoodCourt) + ifelse(is.na(ship$ShoppingMall), 0, ship$ShoppingMall) + ifelse(is.na(ship$Spa), 0, ship$Spa) + ifelse(is.na(ship$VRDeck), 0, ship$VRDeck)
+  ship$HasSpent <- ship$Spending > 0
+}
 ```
 
 
@@ -53,14 +58,20 @@ ship$Transported <- as.logical(ship$Transported)
 ## Change empty strings to NA
 ```{r}
 ship$HomePlanet[ship$HomePlanet==""] <- NA
-ship$CryoSleep[ship$CryoSleep==""] <- NA
 ship$Destination[ship$Destination==""] <- NA
 ship$Name[ship$Name==""] <- NA
 ```
+
 ## Cryosleep implies 0 spending
+### Evidence
+```{r}
+ship[ship$CryoSleep %in% T, c("RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck")]
+```
+### Update
 ```{r}
 ship[ship$CryoSleep %in% T, c("RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck")] <- 0
 ```
+
 ## Young children (Age <= 12) don't spend money
 ### Evidence
 ```{r}
@@ -74,9 +85,7 @@ for (age in 1:15){
 ship[!is.na(ship$Age) & ship$Age <= 12, c("RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck")] <- 0
 ```
 
-
 ## Hypothesis: People in the same group of at least 2 members live in the same Deck for cabins A, B, C
-
 ```{r}
 cmplt <- complete.cases(ship[,c("GID", "Cabin")])
 deck <- NULL
@@ -89,8 +98,6 @@ for(i in 1: nrow(ship)){
   }
 }
 ```
-
-
 ```{r}
 
 for ( j in c("A","B","C","D","E","F", "G","T")){
