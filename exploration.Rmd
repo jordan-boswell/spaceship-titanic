@@ -57,21 +57,18 @@ ship$CryoSleep[ship$CryoSleep==""] <- NA
 ship$Destination[ship$Destination==""] <- NA
 ship$Name[ship$Name==""] <- NA
 ```
-
 ## Cryosleep implies 0 spending
 ```{r}
 ship[ship$CryoSleep %in% T, c("RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck")] <- 0
 ```
-
 ## Young children (Age <= 12) don't spend money
 ### Evidence
 ```{r}
-spending <- ship$RoomService + ship$FoodCourt + ship$ShoppingMall + ship$Spa + ship$VRDeck
+spending <- ifelse(is.na(ship$RoomService), 0, ship$RoomService) + ifelse(is.na(ship$FoodCourt), 0, ship$FoodCourt) + ifelse(is.na(ship$ShoppingMall), 0, ship$ShoppingMall) + ifelse(is.na(ship$Spa), 0, ship$Spa) + ifelse(is.na(ship$VRDeck), 0, ship$VRDeck)
 for (age in 1:15){
   print(paste0(100.0 * nrow(subset(ship, !is.na(Age) & Age==age & !is.na(spending) & spending==0)) / nrow(subset(ship, !is.na(Age) & Age==age & !is.na(spending))), "% of people age ", age, " have 0 total spending"))
 }
 ```
-
 ### Update
 ```{r}
 ship[!is.na(ship$Age) & ship$Age <= 12, c("RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck")] <- 0
