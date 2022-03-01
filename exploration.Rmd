@@ -112,3 +112,16 @@ for ( j in c("A","B","C","D","E","F", "G","T")){
 
 
 0.2% of members of groups who live in cabin A share members with other cabin (Same with B, and C). Fill out the missing cabin for those who have other members live in cabin A,B, C.
+
+
+#  Spending- vip- Cryosleep:  0%  of people who NOT VIP, but spend some money sleep
+
+```{r}
+table(ship$CryoSleep[ship$VIP =="FALSE" & spending >0])
+
+```
+
+```{r}
+ship[ship$VIP== "FALSE" & spending>0, "CryoSleep"] <- "False"
+```
+
