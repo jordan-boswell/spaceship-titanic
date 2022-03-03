@@ -149,8 +149,8 @@ for (i in 1:nrow(ship_groups)){
 
 ```{r}
 for (i in 2:max(ship_groups$Size)){
-    print(paste0("All Non NA Same Cabin (For Groups With Size ", i, "):"))
-    print(table(ship_groups$AllNonNASameCabin[ship_groups$Size == i]))
+    print(paste0("All Non NA Same Cabin (For Groups With Non-NA Size ", i, "):"))
+    print(table(ship_groups$AllNonNASameCabin[ship_groups$Size - ship_groups$CabinNA == i]))
     print("-------------------------------------------")
 }
 
