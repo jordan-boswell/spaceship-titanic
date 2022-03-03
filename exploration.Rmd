@@ -147,6 +147,15 @@ for (i in 1:nrow(ship_groups)){
 }
 ```
 
+```{r}
+for (i in 2:max(ship_groups$Size)){
+    print(paste0("All Non NA Same Cabin (For Groups With Size ", i, "):"))
+    print(table(ship_groups$AllNonNASameCabin[ship_groups$Size == i]))
+    print("-------------------------------------------")
+}
+
+```
+
 
 ##  Spending- vip- Cryosleep:  0%  of people who NOT VIP, but spend some money sleep
 ### Evidence
