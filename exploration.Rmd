@@ -109,49 +109,44 @@ TODO: MAKE THE LATTER PART OF THIS CODE A FUNCTION
 ```{r}
 decks <- c("A", "B", "C", "D", "E", "F", "G", "T")
 for (deck in decks) {
-  ship[[paste0("num", deck)]] <- as.integer(0)
+  ship[[paste0("Num", deck)]] <- as.integer(0)
 }
 
 for (i in 1:nrow(ship)){
   group_members <- subset(ship, GID == ship$GID[i] & IID != ship$IID[i])
   for (deck in decks) {
-    ship[i, paste0("num", deck)] <- sum(!is.na(group_members$Deck) & group_members$Deck == deck)
+      next #DELETE THIS
+    #ship[i, paste0("Num", deck, "NA")] <- sum(is.na(group_members$Deck))
+    #ship[i, paste0("Num", deck)] <- sum(!is.na(group_members$Deck) & group_members$Deck == deck)
   }
+  
+  ship$OthersSameCabin[i] <- ifelse(is.na(ship$Cabin[i]),
+                           NA,
+                           sum(!is.na(group_members$Cabin) & group_members$Cabin == ship$Cabin[i]))
+  ship$OthersNACabin[i] <- sum(is.na(group_members$Cabin))
 }
 
 rm(decks)
 ```
 
-I THINK THIS SECTION NEEDS TO BE RETHOUGHT.  WHAT IF A GROUP HAS MEMBERS LIVING IN LOCATIONS x,x,x,x,y,y,z,q OR x,x,x,x,y?  WHAT ARE WE COUNTING?
-
-THIS IS WRONG.  SEE COMMENT.
 ```{r}
-cmplt <- complete.cases(ship[,c("GID", "Cabin")])
-deck <- NULL
-for(i in 1: nrow(ship)){
-  if (cmplt[i] == FALSE) next
-  for(j in i:nrow(ship)){
-    if(cmplt[j] == FALSE) next
-    if(ship$GID[i] == ship$GID[j] & ship$Cabin[i] != ship$Cabin[j])
-        # YOU ARE ADDING THE SAME PERSON'S DECK MULTIPLE TIMES:
-        deck <-c(deck,ship$Deck[i], ship$Deck[j])
-
-  }
+gids <- unique(ship$GID[ship$GroupSize > 1])
+ship_groups <- data.frame(GID = gids, AllNonNASameCabin = NA, SharedCabin = NA)
+for (i in 1:nrow(ship_groups)){
+    gid <- gids[i]
+    the_group <- subset(ship, GID == gid)
+    ship_groups$CabinNA[i] <- sum(is.na(the_group$Cabin))
+    ship_groups$Size[i] <- nrow(the_group)
+    if (sum(is.na(the_group$Cabin)) == length(the_group))
+        ship_groups$AllNonNASameCabin[i] <- NA
+    else{
+        unique_cabins <- unique(the_group$Cabin[!is.na(the_group$Cabin)])
+        ship_groups$AllNonNASameCabin[i] <- length(unique_cabins) == 1
+        ship_groups$SharedCabin[i] <- ifelse(length(unique_cabins) == 1, unique_cabins[1], NA)
+    }
 }
 ```
 
-THIS DENOMINATOR ( length(deck) ) IS NOT USEFUL.
-```{r}
-
-for ( j in c("A","B","C","D","E","F", "G","T")){
-  for (i in 1: length(deck)){
-   
-  }
-   print(paste0("proportion of",j, "=" , sum(deck==j)/length(deck)))
-}
-
-```
-0.2% of members of groups who live in cabin A share members with other cabin (Same with B, and C). Fill out the missing cabin for those who have other members live in cabin A,B, C.
 
 ##  Spending- vip- Cryosleep:  0%  of people who NOT VIP, but spend some money sleep
 ### Evidence
