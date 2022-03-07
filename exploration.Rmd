@@ -192,3 +192,6 @@ table(ship$CryoSleep[ship$VIP == F & ship$HasSpent])
 ```{r}
 ship[ship$VIP %in% F & ship$HasSpent, "CryoSleep"] <- F
 ```
+
+
+# Models
