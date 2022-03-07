@@ -108,22 +108,18 @@ ship <- updateSpendingOfChildren(ship)
 TODO: MAKE THE LATTER PART OF THIS CODE A FUNCTION
 ```{r}
 decks <- c("A", "B", "C", "D", "E", "F", "G", "T")
-for (deck in decks) {
-  ship[[paste0("Num", deck)]] <- as.integer(0)
-}
 
 for (i in 1:nrow(ship)){
   group_members <- subset(ship, GID == ship$GID[i] & IID != ship$IID[i])
   for (deck in decks) {
-      next #DELETE THIS
-    #ship[i, paste0("Num", deck, "NA")] <- sum(is.na(group_members$Deck))
-    #ship[i, paste0("Num", deck)] <- sum(!is.na(group_members$Deck) & group_members$Deck == deck)
+    ship[i, paste0("Others", deck)] <- sum(!is.na(group_members$Deck) & group_members$Deck == deck)
   }
   
   ship$OthersSameCabin[i] <- ifelse(is.na(ship$Cabin[i]),
                            NA,
                            sum(!is.na(group_members$Cabin) & group_members$Cabin == ship$Cabin[i]))
   ship$OthersNACabin[i] <- sum(is.na(group_members$Cabin))
+  ship$OthersTransported[i] <- sum(group_members$Transported)
 }
 
 rm(decks)
@@ -132,6 +128,9 @@ rm(decks)
 ```{r}
 gids <- unique(ship$GID[ship$GroupSize > 1])
 ship_groups <- data.frame(GID = gids, AllNonNASameCabin = NA, SharedCabin = NA)
+ship_groups$UniqueCabins <- 0
+ship_groups$NumInSecondCabin <- NA
+ship_groups$SharedCabin <- NA
 for (i in 1:nrow(ship_groups)){
     gid <- gids[i]
     the_group <- subset(ship, GID == gid)
@@ -141,7 +140,33 @@ for (i in 1:nrow(ship_groups)){
         ship_groups$AllNonNASameCabin[i] <- NA
     else{
         unique_cabins <- unique(the_group$Cabin[!is.na(the_group$Cabin)])
+        ship_groups$UniqueCabins[i] <- length(unique_cabins)
         ship_groups$AllNonNASameCabin[i] <- length(unique_cabins) == 1
+        if (ship_groups$UniqueCabins[i] == 1) {
+            ship_groups$SharedCabin[i] <- unique_cabins[1]
+        }
+        else if (ship_groups$UniqueCabins[i] == 2) {
+            num1 <- 0
+            num2 <- 0
+            for (cabin in the_group$Cabin) {
+                if (is.na(cabin)) next
+                if (cabin == unique_cabins[1]) num1 <- num1 + 1
+                else num2 <- num2 + 1
+            }
+            ship_groups$NumInSecondCabin[i] <- min(num1, num2)
+        }
+        else if (ship_groups$UniqueCabins[i] == 3){
+            num1 <- 0
+            num2 <- 0
+            num3 <- 0
+            for (cabin in the_group$Cabin) {
+                if (is.na(cabin)) next
+                if (cabin == unique_cabins[1]) num1 <- num1 + 1
+                else if (cabin == unique_cabins[2]) num2 <- num2 + 1
+                else num3 <- num3 + 1
+            }
+            ship_groups$NumInSecondCabin[i] <- sort(c(num1, num2, num3))[2]
+        }
         ship_groups$SharedCabin[i] <- ifelse(length(unique_cabins) == 1, unique_cabins[1], NA)
     }
 }
@@ -150,7 +175,7 @@ for (i in 1:nrow(ship_groups)){
 ```{r}
 for (i in 2:max(ship_groups$Size)){
     print(paste0("All Non NA Same Cabin (For Groups With Non-NA Size ", i, "):"))
-    print(table(ship_groups$AllNonNASameCabin[ship_groups$Size - ship_groups$CabinNA == i]))
+    print(table(ship_groups$AllNonNASameCabin[ship_groups$Size - ship_groups$CabinNA == i & (ship_groups$UniqueCabins == 1 | (ship_groups$UniqueCabins == 2 & ship_groups$NumInSecondCabin == 1))]))
     print("-------------------------------------------")
 }
 
