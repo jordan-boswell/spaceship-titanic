@@ -201,6 +201,14 @@ ship[ship$VIP %in% F & ship$HasSpent, "CryoSleep"] <- F
 ```
 
 
+
+# Last name
+
+```{r}
+ship$LastName <- sapply(ship$Name, function(x){strsplit(x,split = " ")}[[1]][2])
+```
+
+
 # Models
 ## Read in Test and Modify
 ```{r}
@@ -217,9 +225,68 @@ test <- updateOthersCabins(test)
 
 ## Random Forest
 ```{r}
-library(randomForest)
-ship <- rfImpute(ship)
-rf <- randomForest(Transported~HomePlanet+CryoSleep+Destination+Age+VIP+Spending+HasSpent+Deck+Side+GroupSize+OthersTransported, data=ship)
+
+```
+
+
+## GLMS
+
+```{r}
+glm1 <-glm(Transported~ Age+Spa+Spending+OthersTransported+as.factor(HomePlanet)+as.factor(VIP)+GroupSize +VRDeck+HasSpent +CryoSleep+RoomService+FoodCourt +as.factor(Deck)+Destination+ShoppingMall+as.numeric(Num)+as.factor(Side), data = ship, family = "binomial")
+
+
+
+
+pred <- predict(glm1, newdata = test,type = "response" )>=0.5
+
+pred <- ifelse(is.na(pred), TRUE, pred)
+
+pred <- ifelse(pred =="TRUE", "True", "False")
+
+write.csv(data.frame("PassengerId" = test$PassengerId, "Transported" = pred), row.names = FALSE,  quote = FALSE, file = "submission.csv")
+```
+
+#  Same last name, same group: for each deck
+
+```{r}
+#for(j in C("A","B","C", "D","E", "F","G", "T")){
+  deck <- subset(ship, Deck=="A")
+  for(i in unique(deck$LastName)){
+    Name <- subset(deck, LastName == i)
+    if (nrow(Name) ==1)
+      next
+    else (length(unique(Name$GID)) >1)
+      print(Name$GID)
+  }
+#}
+Name
+
+
+```
+# Same last name,same group !-> same cabin
+
+```{r}
+data <- ship %>% filter(!is.na(LastName) & !is.na(Cabin))
+
+for(i in unique(data$LastName)){
+  Name <- subset(data, LastName == i)
+  if (nrow(Name) ==1)
+    next
+  
+  else if (length(unique(Name$GID)>1)) 
+     {
+    for (j in unique(Name$GID)){
+      gid <- subset(Name, GID ==j)
+     
+      if (nrow(gid) ==1)
+        next
+     
+      else if (length(unique(gid$Cabin)) >1)
+    
+          print(gid$GID)
+    }
+  }
+}
 
 ```
 
