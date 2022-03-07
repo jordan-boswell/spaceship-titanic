@@ -16,7 +16,7 @@ library(caret)
 
 # Read data and format columns
 ```{r}
-ship <- read.csv("train.csv")
+ship <- read.csv("train.csv", na.strings=c("NA", ""))
 
 create_base_columns <- function(df){
     df$GID <- as.integer(substr(df$PassengerId, 1,4))
@@ -29,16 +29,16 @@ create_base_columns <- function(df){
     
     df$CryoSleep <- as.logical(df$CryoSleep)
     
-    df$Deck <- as.character(mapply(function(x,y){if(nchar(x)==0){NULL}else{substr(x,y[2],y[3]-2)}},
+    df$Deck <- as.character(mapply(function(x,y){if(is.na(x)){NA}else{substr(x,y[2],y[3]-2)}},
                           df$Cabin,
                           regexec("(.*?)/(.*?)/(.*)", df$Cabin)))
-    df$Num <- as.character(mapply(function(x,y){if(nchar(x)==0){NULL}else{substr(x,y[3],y[4]-2)}},
+    df$Num <- as.integer(mapply(function(x,y){if(is.na(x)){NA}else{substr(x,y[3],y[4]-2)}},
                           df$Cabin,
                           regexec("(.*?)/(.*?)/(.*)", df$Cabin)))
-    df$Side <- as.character(mapply(function(x,y){if(nchar(x)==0){NULL}else{substr(x,y[4],nchar(x))}},
+    df$Side <- as.character(mapply(function(x,y){if(is.na(x)){NA}else{substr(x,y[4],nchar(x))}},
                           df$Cabin,
                           regexec("(.*?)/(.*?)/(.*)", df$Cabin)))
-    df$Cabin <- sapply(df$Cabin, function(x){if (x=="") NA else x})
+    #df$Cabin <- sapply(df$Cabin, function(x){if (x=="") NA else x})
     
     df$Destination <- as.factor(df$Destination)
     
@@ -69,13 +69,6 @@ ship <- updateSpending(ship)
 
 
 # Fixing missing data
-## Change empty strings to NA
-```{r}
-ship$HomePlanet[ship$HomePlanet==""] <- NA
-ship$Destination[ship$Destination==""] <- NA
-ship$Name[ship$Name==""] <- NA
-```
-
 ## Cryosleep implies 0 spending
 ### Evidence
 ```{r}
@@ -106,6 +99,14 @@ updateSpendingOfChildren <- function(df){
  df
 }
 ship <- updateSpendingOfChildren(ship)
+```
+
+## Exploring Num
+```{r}
+for (deck in sort(unique(ship$Deck))){
+    if (is.na(deck)) next
+    hist(ship$Num[!is.na(ship$Deck) & ship$Deck == deck], main=deck)
+}
 ```
 
 ## Hypothesis: People in the same group of at least 2 members live in the same Deck for cabins A, B, C
@@ -204,7 +205,7 @@ ship[ship$VIP %in% F & ship$HasSpent, "CryoSleep"] <- F
 # Models
 ## Read in Test and Modify
 ```{r}
-test <- read.csv("test.csv")
+test <- read.csv("test.csv", na.strings=c("NA", ""))
 test <- create_base_columns(test)
 test <- updateSpending(test)
 test$HomePlanet[test$HomePlanet==""] <- NA
@@ -256,4 +257,3 @@ predictions <- predict(rf, newdata=test)
 predictions <- ifelse(predictions == "TRUE", "True", "False")
 write.csv(list(PassengerId=test$PassengerId, Transported=predictions), file="submission.csv", row.names=F, quote=F)
 ```
-
