@@ -18,32 +18,38 @@ library(caret)
 ```{r}
 ship <- read.csv("train.csv")
 
-ship$GID <- as.integer(substr(ship$PassengerId, 1,4))
+create_base_columns <- function(df){
+    df$GID <- as.integer(substr(df$PassengerId, 1,4))
+    
+    df$IID <- as.integer(substr(df$PassengerId,6,8))
+    
+    df$GroupSize <- sapply(df$GID, function(x){sum(df$GID == x)})
+    
+    df$HomePlanet <- as.factor(df$HomePlanet)
+    
+    df$CryoSleep <- as.logical(df$CryoSleep)
+    
+    df$Deck <- as.character(mapply(function(x,y){if(nchar(x)==0){NULL}else{substr(x,y[2],y[3]-2)}},
+                          df$Cabin,
+                          regexec("(.*?)/(.*?)/(.*)", df$Cabin)))
+    df$Num <- as.character(mapply(function(x,y){if(nchar(x)==0){NULL}else{substr(x,y[3],y[4]-2)}},
+                          df$Cabin,
+                          regexec("(.*?)/(.*?)/(.*)", df$Cabin)))
+    df$Side <- as.character(mapply(function(x,y){if(nchar(x)==0){NULL}else{substr(x,y[4],nchar(x))}},
+                          df$Cabin,
+                          regexec("(.*?)/(.*?)/(.*)", df$Cabin)))
+    df$Cabin <- sapply(df$Cabin, function(x){if (x=="") NA else x})
+    
+    df$Destination <- as.factor(df$Destination)
+    
+    df$Age <- as.integer(df$Age)
+    
+    df$VIP <- as.logical(df$VIP)
+    
+    df
+}
 
-ship$IID <- as.integer(substr(ship$PassengerId,6,8))
-
-ship$GroupSize <- sapply(ship$GID, function(x){sum(ship$GID == x)})
-
-ship$HomePlanet <- as.factor(ship$HomePlanet)
-
-ship$CryoSleep <- as.logical(ship$CryoSleep)
-
-ship$Deck <- as.character(mapply(function(x,y){if(nchar(x)==0){NULL}else{substr(x,y[2],y[3]-2)}},
-                      ship$Cabin,
-                      regexec("(.*?)/(.*?)/(.*)", ship$Cabin)))
-ship$Num <- as.character(mapply(function(x,y){if(nchar(x)==0){NULL}else{substr(x,y[3],y[4]-2)}},
-                      ship$Cabin,
-                      regexec("(.*?)/(.*?)/(.*)", ship$Cabin)))
-ship$Side <- as.character(mapply(function(x,y){if(nchar(x)==0){NULL}else{substr(x,y[4],nchar(x))}},
-                      ship$Cabin,
-                      regexec("(.*?)/(.*?)/(.*)", ship$Cabin)))
-ship$Cabin <- sapply(ship$Cabin, function(x){if (x=="") NA else x})
-
-ship$Destination <- as.factor(ship$Destination)
-
-ship$Age <- as.integer(ship$Age)
-
-ship$VIP <- as.logical(ship$VIP)
+ship <- create_base_columns(ship)
 
 ship$Transported <- as.logical(ship$Transported)
 
@@ -93,7 +99,6 @@ for (age in 1:15){
 }
 ```
 ### Update
-TODO: MAKE THIS A FUNCTION
 ```{r}
 updateSpendingOfChildren <- function(df){
  df[!is.na(df$Age) & df$Age <= 12, c("RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck")] <- 0
@@ -105,24 +110,26 @@ ship <- updateSpendingOfChildren(ship)
 
 ## Hypothesis: People in the same group of at least 2 members live in the same Deck for cabins A, B, C
 ### Create Useful Columns
-TODO: MAKE THE LATTER PART OF THIS CODE A FUNCTION
 ```{r}
-decks <- c("A", "B", "C", "D", "E", "F", "G", "T")
+updateOthersCabins <- function(df){
+    decks <- c("A", "B", "C", "D", "E", "F", "G", "T")
 
-for (i in 1:nrow(ship)){
-  group_members <- subset(ship, GID == ship$GID[i] & IID != ship$IID[i])
-  for (deck in decks) {
-    ship[i, paste0("Others", deck)] <- sum(!is.na(group_members$Deck) & group_members$Deck == deck)
-  }
-  
-  ship$OthersSameCabin[i] <- ifelse(is.na(ship$Cabin[i]),
-                           NA,
-                           sum(!is.na(group_members$Cabin) & group_members$Cabin == ship$Cabin[i]))
-  ship$OthersNACabin[i] <- sum(is.na(group_members$Cabin))
-  ship$OthersTransported[i] <- sum(group_members$Transported)
+    for (i in 1:nrow(df)){
+      group_members <- subset(df, GID == df$GID[i] & IID != df$IID[i])
+      for (deck in decks) {
+        df[i, paste0("Others", deck)] <- sum(!is.na(group_members$Deck) & group_members$Deck == deck)
+      }
+      
+      df$OthersSameCabin[i] <- ifelse(is.na(df$Cabin[i]),
+                               NA,
+                               sum(!is.na(group_members$Cabin) & group_members$Cabin == df$Cabin[i]))
+      df$OthersNACabin[i] <- sum(is.na(group_members$Cabin))
+      df$OthersTransported[i] <- sum(group_members$Transported)
+    }
+    df
 }
 
-rm(decks)
+ship <- updateOthersCabins(ship)
 ```
 
 ```{r}
@@ -195,3 +202,24 @@ ship[ship$VIP %in% F & ship$HasSpent, "CryoSleep"] <- F
 
 
 # Models
+## Read in Test and Modify
+```{r}
+test <- read.csv("test.csv")
+test <- create_base_columns(test)
+test <- updateSpending(test)
+test$HomePlanet[test$HomePlanet==""] <- NA
+test$Destination[test$Destination==""] <- NA
+test$Name[test$Name==""] <- NA
+test <- updateSpendingOfCryo(test)
+test <- updateSpendingOfChildren(test)
+test <- updateOthersCabins(test)
+```
+
+## Random Forest
+```{r}
+library(randomForest)
+ship <- rfImpute(ship)
+rf <- randomForest(Transported~HomePlanet+CryoSleep+Destination+Age+VIP+Spending+HasSpent+Deck+Side+GroupSize+OthersTransported, data=ship)
+
+```
+
