@@ -16,7 +16,7 @@ library(caret)
 
 # Read data and format columns
 ```{r}
-ship <- read.csv("train.csv")
+ship <- read.csv("train.csv", na.strings=c("NA", ""))
 
 create_base_columns <- function(df){
     df$GID <- as.integer(substr(df$PassengerId, 1,4))
@@ -29,16 +29,16 @@ create_base_columns <- function(df){
     
     df$CryoSleep <- as.logical(df$CryoSleep)
     
-    df$Deck <- as.character(mapply(function(x,y){if(nchar(x)==0){NULL}else{substr(x,y[2],y[3]-2)}},
+    df$Deck <- as.character(mapply(function(x,y){if(is.na(x)){NA}else{substr(x,y[2],y[3]-2)}},
                           df$Cabin,
                           regexec("(.*?)/(.*?)/(.*)", df$Cabin)))
-    df$Num <- as.character(mapply(function(x,y){if(nchar(x)==0){NULL}else{substr(x,y[3],y[4]-2)}},
+    df$Num <- as.integer(mapply(function(x,y){if(is.na(x)){NA}else{substr(x,y[3],y[4]-2)}},
                           df$Cabin,
                           regexec("(.*?)/(.*?)/(.*)", df$Cabin)))
-    df$Side <- as.character(mapply(function(x,y){if(nchar(x)==0){NULL}else{substr(x,y[4],nchar(x))}},
+    df$Side <- as.character(mapply(function(x,y){if(is.na(x)){NA}else{substr(x,y[4],nchar(x))}},
                           df$Cabin,
                           regexec("(.*?)/(.*?)/(.*)", df$Cabin)))
-    df$Cabin <- sapply(df$Cabin, function(x){if (x=="") NA else x})
+    #df$Cabin <- sapply(df$Cabin, function(x){if (x=="") NA else x})
     
     df$Destination <- as.factor(df$Destination)
     
@@ -69,13 +69,6 @@ ship <- updateSpending(ship)
 
 
 # Fixing missing data
-## Change empty strings to NA
-```{r}
-ship$HomePlanet[ship$HomePlanet==""] <- NA
-ship$Destination[ship$Destination==""] <- NA
-ship$Name[ship$Name==""] <- NA
-```
-
 ## Cryosleep implies 0 spending
 ### Evidence
 ```{r}
@@ -106,6 +99,14 @@ updateSpendingOfChildren <- function(df){
  df
 }
 ship <- updateSpendingOfChildren(ship)
+```
+
+## Exploring Num
+```{r}
+for (deck in sort(unique(ship$Deck))){
+    if (is.na(deck)) next
+    hist(ship$Num[!is.na(ship$Deck) & ship$Deck == deck], main=deck)
+}
 ```
 
 ## Hypothesis: People in the same group of at least 2 members live in the same Deck for cabins A, B, C
@@ -209,43 +210,6 @@ ship$LastName <- sapply(ship$Name, function(x){strsplit(x,split = " ")}[[1]][2])
 ```
 
 
-# Models
-## Read in Test and Modify
-```{r}
-test <- read.csv("test.csv")
-test <- create_base_columns(test)
-test <- updateSpending(test)
-test$HomePlanet[test$HomePlanet==""] <- NA
-test$Destination[test$Destination==""] <- NA
-test$Name[test$Name==""] <- NA
-test <- updateSpendingOfCryo(test)
-test <- updateSpendingOfChildren(test)
-test <- updateOthersCabins(test)
-```
-
-## Random Forest
-```{r}
-
-```
-
-
-## GLMS
-
-```{r}
-glm1 <-glm(Transported~ Age+Spa+Spending+OthersTransported+as.factor(HomePlanet)+as.factor(VIP)+GroupSize +VRDeck+HasSpent +CryoSleep+RoomService+FoodCourt +as.factor(Deck)+Destination+ShoppingMall+as.numeric(Num)+as.factor(Side), data = ship, family = "binomial")
-
-
-
-
-pred <- predict(glm1, newdata = test,type = "response" )>=0.5
-
-pred <- ifelse(is.na(pred), TRUE, pred)
-
-pred <- ifelse(pred =="TRUE", "True", "False")
-
-write.csv(data.frame("PassengerId" = test$PassengerId, "Transported" = pred), row.names = FALSE,  quote = FALSE, file = "submission.csv")
-```
-
 #  Same last name, same group: for each deck
 
 ```{r}
@@ -287,6 +251,79 @@ for(i in unique(data$LastName)){
     }
   }
 }
-
 ```
 
+# Models
+## Read in Test and Modify
+```{r}
+test <- read.csv("test.csv", na.strings=c("NA", ""))
+test <- create_base_columns(test)
+test <- updateSpending(test)
+test$HomePlanet[test$HomePlanet==""] <- NA
+test$Destination[test$Destination==""] <- NA
+test$Name[test$Name==""] <- NA
+test <- updateSpendingOfCryo(test)
+test <- updateSpendingOfChildren(test)
+test <- updateOthersCabins(test)
+```
+
+## Imputation
+```{r}
+library(missForest)
+
+variables <- c("HomePlanet", "CryoSleep", "Destination", "Age", "VIP", "GroupSize", "Deck", "Side", "Spending")
+
+test$CryoSleep <- as.factor(test$CryoSleep)
+test$Age <- as.numeric(test$Age)
+test$Deck <- as.factor(test$Deck)
+test$VIP <- as.factor(test$VIP)
+test$GroupSize <- as.numeric(test$GroupSize)
+test$Side <- as.factor(test$Side)
+
+test[, variables] <- missForest(test[, variables])$ximp
+test <- updateSpending(test)
+test <- updateSpendingOfCryo(test)
+test <- updateSpendingOfChildren(test)
+test <- updateOthersCabins(test)
+
+ship$CryoSleep <- as.factor(ship$CryoSleep)
+ship$Age <- as.numeric(ship$Age)
+ship$Deck <- as.factor(ship$Deck)
+ship$VIP <- as.factor(ship$VIP)
+ship$GroupSize <- as.numeric(ship$GroupSize)
+ship$Side <- as.factor(ship$Side)
+
+ship[, variables] <- missForest(ship[, variables])$ximp
+ship <- updateSpending(ship)
+ship <- updateSpendingOfCryo(ship)
+ship <- updateSpendingOfChildren(ship)
+ship <- updateOthersCabins(ship)
+```
+
+
+## GLMS
+
+```{r}
+glm1 <-glm(Transported~ Age+Spa+Spending+OthersTransported+as.factor(HomePlanet)+as.factor(VIP)+GroupSize +VRDeck+HasSpent +CryoSleep+RoomService+FoodCourt +as.factor(Deck)+Destination+ShoppingMall+as.numeric(Num)+as.factor(Side), data = ship, family = "binomial")
+
+
+
+
+pred <- predict(glm1, newdata = test,type = "response" )>=0.5
+
+pred <- ifelse(is.na(pred), TRUE, pred)
+
+pred <- ifelse(pred =="TRUE", "True", "False")
+
+write.csv(data.frame("PassengerId" = test$PassengerId, "Transported" = pred), row.names = FALSE,  quote = FALSE, file = "submission.csv")
+```
+
+
+## Random Forest
+```{r}
+ship$Transported <- as.factor(ship$Transported)
+rf <- randomForest(Transported~., data=ship[, c(variables, "Transported")])
+predictions <- predict(rf, newdata=test)
+predictions <- ifelse(predictions == "TRUE", "True", "False")
+write.csv(list(PassengerId=test$PassengerId, Transported=predictions), file="submission.csv", row.names=F, quote=F)
+```
