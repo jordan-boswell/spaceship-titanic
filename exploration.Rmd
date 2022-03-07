@@ -215,11 +215,45 @@ test <- updateSpendingOfChildren(test)
 test <- updateOthersCabins(test)
 ```
 
+## Imputation
+```{r}
+library(missForest)
+
+variables <- c("HomePlanet", "CryoSleep", "Destination", "Age", "VIP", "GroupSize", "Deck", "Side", "Spending")
+
+test$CryoSleep <- as.factor(test$CryoSleep)
+test$Age <- as.numeric(test$Age)
+test$Deck <- as.factor(test$Deck)
+test$VIP <- as.factor(test$VIP)
+test$GroupSize <- as.numeric(test$GroupSize)
+test$Side <- as.factor(test$Side)
+
+test[, variables] <- missForest(test[, variables])$ximp
+test <- updateSpending(test)
+test <- updateSpendingOfCryo(test)
+test <- updateSpendingOfChildren(test)
+test <- updateOthersCabins(test)
+
+ship$CryoSleep <- as.factor(ship$CryoSleep)
+ship$Age <- as.numeric(ship$Age)
+ship$Deck <- as.factor(ship$Deck)
+ship$VIP <- as.factor(ship$VIP)
+ship$GroupSize <- as.numeric(ship$GroupSize)
+ship$Side <- as.factor(ship$Side)
+
+ship[, variables] <- missForest(ship[, variables])$ximp
+ship <- updateSpending(ship)
+ship <- updateSpendingOfCryo(ship)
+ship <- updateSpendingOfChildren(ship)
+ship <- updateOthersCabins(ship)
+```
+
 ## Random Forest
 ```{r}
-library(randomForest)
-ship <- rfImpute(ship)
-rf <- randomForest(Transported~HomePlanet+CryoSleep+Destination+Age+VIP+Spending+HasSpent+Deck+Side+GroupSize+OthersTransported, data=ship)
-
+ship$Transported <- as.factor(ship$Transported)
+rf <- randomForest(Transported~., data=ship[, c(variables, "Transported")])
+predictions <- predict(rf, newdata=test)
+predictions <- ifelse(predictions == "TRUE", "True", "False")
+write.csv(list(PassengerId=test$PassengerId, Transported=predictions), file="submission.csv", row.names=F, quote=F)
 ```
 
