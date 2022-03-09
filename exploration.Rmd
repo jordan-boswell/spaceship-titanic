@@ -11,6 +11,8 @@ library(rigr)
 library(tidyverse)
 library(randomForest)
 library(caret)
+library(rpart)
+library(rpart.plot)
 ```
 
 
@@ -299,6 +301,27 @@ ship <- updateSpendingOfCryo(ship)
 ship <- updateSpendingOfChildren(ship)
 ship <- updateOthersCabins(ship)
 ```
+
+
+
+
+# Predict Cryoshleep
+
+```{r}
+newdat <- ship[is.na(ship$CryoSleep),]
+
+g1 <-glm(as.factor(CryoSleep)~ GroupSize + RoomService+ FoodCourt+ ShoppingMall+Spa+VRDeck+as.factor(VIP)+Age+Deck+Num+Side, data= ship,na.action = "na.omit", family = "binomial")
+pred <- predict(g1, newdata= newdat, type = "response")>=0.5
+pred
+
+```
+
+## decision tree
+
+```{r}
+rpart.plot(rpart(Transported~HomePlanet+CryoSleep+Destination+Age+VIP+Spending+GroupSize+Deck+Num+Side, data= ship, control=rpart.control(cp=0.005)))
+```
+
 
 
 ## GLMS
