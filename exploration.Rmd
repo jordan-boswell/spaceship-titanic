@@ -101,6 +101,14 @@ updateSpendingOfChildren <- function(df){
 ship <- updateSpendingOfChildren(ship)
 ```
 
+## Does Cryosleep affect Cabin?
+```{r}
+signif(table(ship$Deck[!is.na(ship$CryoSleep) & !is.na(ship$Deck) & ship$CryoSleep == T]) / sum(!is.na(ship$CryoSleep) & !is.na(ship$Deck) & ship$CryoSleep == T) * 100, 4)
+
+signif(table(ship$Deck[!is.na(ship$CryoSleep) & !is.na(ship$Deck) & ship$CryoSleep == T]) / tapply(ship$Deck, ship$Deck, FUN=length)[-8] * 100, 4)
+```
+
+
 ## Exploring Num
 ```{r}
 for (deck in sort(unique(ship$Deck))){
@@ -144,6 +152,8 @@ for (i in 1:nrow(ship_groups)){
     the_group <- subset(ship, GID == gid)
     ship_groups$CabinNA[i] <- sum(is.na(the_group$Cabin))
     ship_groups$Size[i] <- nrow(the_group)
+    ship_groups$HomePlanets[i] <- length(unique(the_group$HomePlanet[!is.na(the_group$HomePlanet)]))
+    ship_groups$Destinations[i] <- length(unique(the_group$Destination[!is.na(the_group$Destination)]))
     if (sum(is.na(the_group$Cabin)) == length(the_group))
         ship_groups$AllNonNASameCabin[i] <- NA
     else{
@@ -179,6 +189,18 @@ for (i in 1:nrow(ship_groups)){
     }
 }
 ```
+
+## Groups share the same home planet (but not destination)
+## Evidence
+```{r}
+table(ship_groups$HomePlanets)
+table(ship_groups$Destinations)
+```
+
+## Update
+```{r}
+```
+
 
 ```{r}
 for (i in 2:max(ship_groups$Size)){
