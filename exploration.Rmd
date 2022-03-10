@@ -18,7 +18,12 @@ library(rpart.plot)
 
 # Read data and format columns
 ```{r}
-ship <- read.csv("train.csv", na.strings=c("NA", ""))
+train <- read.csv("train.csv", na.strings=c("NA", ""))
+test <- read.csv("test.csv", na.strings=c("NA", ""))
+train$Train <- T
+test$Train <- F
+test$Transported <- NA
+ship <- rbind(train, test)
 
 create_base_columns <- function(df){
     df$GID <- as.integer(substr(df$PassengerId, 1,4))
