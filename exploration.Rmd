@@ -20,8 +20,8 @@ library(rpart.plot)
 ```{r}
 train <- read.csv("train.csv", na.strings=c("NA", ""))
 test <- read.csv("test.csv", na.strings=c("NA", ""))
-train$Train <- T
-test$Train <- F
+train$Train <- TRUE
+test$Train <- FALSE
 test$Transported <- NA
 ship <- rbind(train, test)
 
@@ -72,6 +72,12 @@ updateSpending <- function(df){
   df
 }
 ship <- updateSpending(ship)
+```
+
+# Notes
+## test$GID and train$GID are disjoint
+```{r}
+intersect(ship$GID[ship$Train], ship$GID[!ship$Train])
 ```
 
 
@@ -293,6 +299,23 @@ for(i in unique(data$LastName)){
   }
 }
 ```
+
+## Heat-maps
+
+```{r}
+heat.map <- function(c1, c2){
+  train <- subset(ship, Train == T)
+  m <- matrix(NA, nrow = length(levels(train[[c1]])), ncol = length(levels(train[[c2]])))
+  for (i in 1:nrow(m)){
+    for (j in 1:ncol(m)){
+      
+      m[i,j] <- sum(train$Transported[train[[c1]]==levels(train[[c1]])[i] & train[[c2]]==levels(train[[c2]])[j]]) / nrow(train$Transported[train[[c1]]==levels(train[[c1]])[i] & train[[c2]]==levels(train[[c2]])[j]])
+    }
+  }
+}
+```
+
+
 
 # Models
 ## Read in Test and Modify
