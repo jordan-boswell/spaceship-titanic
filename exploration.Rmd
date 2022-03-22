@@ -303,16 +303,22 @@ for(i in unique(data$LastName)){
 ## Heat-maps
 
 ```{r}
-heat.map <- function(c1, c2){
+heatarray <- function(c1, c2){
   train <- subset(ship, Train == T)
-  m <- matrix(NA, nrow = length(levels(train[[c1]])), ncol = length(levels(train[[c2]])))
+  c1 <- as.factor(train[[c1]])
+  c2 <- as.factor(train[[c2]])
+  m <- matrix(NA, nrow = length(levels(c1)), ncol = length(levels(c2)))
+  rownames(m) <- levels(c1)
+  colnames(m) <- levels(c2)
   for (i in 1:nrow(m)){
     for (j in 1:ncol(m)){
-      
-      m[i,j] <- sum(train$Transported[train[[c1]]==levels(train[[c1]])[i] & train[[c2]]==levels(train[[c2]])[j]]) / nrow(train$Transported[train[[c1]]==levels(train[[c1]])[i] & train[[c2]]==levels(train[[c2]])[j]])
+      m[i,j] <- round(sum(train$Transported[c1==levels(c1)[i] & c2==levels(c2)[j]], na.rm=T) / length(train$Transported[!is.na(c1) & !is.na(c2) & c1==levels(c1)[i] & c2==levels(c2)[j]]), 2)
     }
   }
+  return(m)
 }
+
+
 ```
 
 
