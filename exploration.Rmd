@@ -77,15 +77,17 @@ ship <- updateSpending(ship)
 
 # Fixing missing data
 ## Cryosleep implies 0 spending
+## <=> spending implies not Cryosleep
 ### Evidence
 ```{r}
-table(ship[ship$CryoSleep %in% T, "HasSpent"])
+ftable(HasSpent~CryoSleep, data=ship)
 ```
 ### Update
 ```{r}
 updateSpendingOfCryo <- function(df){
   df[df$CryoSleep %in% T, c("RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck")] <- 0
   df <- updateSpending(df)
+  df$Cryosleep[df$HasSpent %in% T] <- F
   df
 }
 ship <- updateSpendingOfCryo(ship)
@@ -94,9 +96,14 @@ ship <- updateSpendingOfCryo(ship)
 ## Young children (Age <= 12) don't spend money
 ### Evidence
 ```{r}
-for (age in 1:15){
-  print(paste0(100.0 * nrow(subset(ship, !is.na(Age) & Age==age & !is.na(ship$Spending) & !ship$HasSpent)) / nrow(subset(ship, !is.na(Age) & Age==age & !is.na(ship$Spending))), "% of people age ", age, " have 0 total spending"))
-}
+spending_mean <- sapply(split(ship$Spending, ship$Age), mean)
+spending_25 <- sapply(split(ship$Spending, ship$Age), function(x){quantile(x, 0.25)})
+spending_75 <- sapply(split(ship$Spending, ship$Age), function(x){quantile(x, 0.75)})
+
+plot(names(spending_mean), spending_mean, main='Spending by Age', xlab='Age', ylab='Spending', col='red', type='l', lwd=2, ylim=c(0, max(spending_75)))
+lines(names(spending_mean), spending_25, col='light blue', lwd=2)
+lines(names(spending_mean), spending_75, col='dark blue', lwd=2)
+legend(x='topleft', legend=c('25th percentile', 'mean', '75th percentile'), col=c('light blue', 'red', 'dark blue'), lwd=2)
 ```
 ### Update
 ```{r}
@@ -212,10 +219,9 @@ table(ship_groups$Destinations)
 
 ## Update
 ```{r}
-ship$HomePlanet[is.na(ship$HomePlanet) & ship$GroupSize>1] <- ship_groups$HomePlanet[ship_groups$GID ]
 for (i in 1:nrow(ship)){
     if (is.na(ship$HomePlanet[i]) && ship$GroupSize[i] > 1){
-        ship$HomePlanet[i] <- ship_groups$HomePlanet[ship_groups$GID == ship$GID[i]][1]
+        ship$HomePlanet[i] <- ship_groups$HomePlanet[ship_groups$GID == ship$GID[i]]
     }
 }
 ```
@@ -228,18 +234,6 @@ for (i in 2:max(ship_groups$Size)){
     print("-------------------------------------------")
 }
 
-```
-
-
-##  Spending- vip- Cryosleep:  0%  of people who NOT VIP, but spend some money sleep
-### Evidence
-```{r}
-table(ship$CryoSleep[ship$VIP == F & ship$HasSpent])
-
-```
-### Update
-```{r}
-ship[ship$VIP %in% F & ship$HasSpent, "CryoSleep"] <- F
 ```
 
 
