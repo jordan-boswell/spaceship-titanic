@@ -20,8 +20,8 @@ library(rpart.plot)
 ```{r}
 train <- read.csv("train.csv", na.strings=c("NA", ""))
 test <- read.csv("test.csv", na.strings=c("NA", ""))
-train$Train <- T
-test$Train <- F
+train$Train <- TRUE
+test$Train <- FALSE
 test$Transported <- NA
 ship <- rbind(train, test)
 
@@ -72,6 +72,12 @@ updateSpending <- function(df){
   df
 }
 ship <- updateSpending(ship)
+```
+
+# Notes
+## test$GID and train$GID are disjoint
+```{r}
+intersect(ship$GID[ship$Train], ship$GID[!ship$Train])
 ```
 
 
@@ -287,6 +293,119 @@ for(i in unique(data$LastName)){
   }
 }
 ```
+
+## Heat-maps
+
+```{r}
+heatarray <- function(c1, c2){
+  train <- subset(ship, Train == T)
+  c1 <- as.factor(train[[c1]])
+  c2 <- as.factor(train[[c2]])
+  m <- matrix(NA, nrow = length(levels(c1)), ncol = length(levels(c2)))
+  rownames(m) <- levels(c1)
+  colnames(m) <- levels(c2)
+  for (i in 1:nrow(m)){
+    for (j in 1:ncol(m)){
+      m[i,j] <- round(sum(train$Transported[c1==levels(c1)[i] & c2==levels(c2)[j]], na.rm=T) / length(train$Transported[!is.na(c1) & !is.na(c2) & c1==levels(c1)[i] & c2==levels(c2)[j]]), 2)
+    }
+  }
+  return(m)
+}
+
+
+```
+
+
+## percentage of group/lastname/family having the same Cryosleep value
+
+```{r}
+count <- 0
+total <- 0
+for (i in unique(ship$GID)){
+  g <- ship[!is.na(ship$CryoSleep) & ship$GID == i & ship$GroupSize > 1, ]
+  if (length(unique(g$CryoSleep)) == 1) {
+    count <- count + 1
+    total <- total + 1
+  }
+  else if (length(unique(g$CryoSleep)) == 2) {
+    total <- total + 1
+  }
+}
+print(paste0(count, " / ", total, " = ", round(count/total, 2)))
+```
+
+```{r}
+count <- 0
+total <- 0
+for (i in unique(ship$LastName)){
+  g <- ship[!is.na(ship$CryoSleep) & !is.na(ship$LastName) & ship$LastName == i, ]
+  if (length(unique(g$CryoSleep)) == 1) {
+    count <- count + 1
+    total <- total + 1
+  }
+  else if (length(unique(g$CryoSleep)) == 2) {
+    total <- total + 1
+  }
+}
+print(paste0(count, " / ", total, " = ", round(count/total, 2)))
+```
+
+```{r}
+count <- 0
+total <- 0
+for (i in unique(ship$GID)){
+  g <- ship[!is.na(ship$CryoSleep) & ship$GID == i & ship$GroupSize > 1, ]
+  for (j in unique(g$LastName[!is.na(g$LastName)])){
+    g2 <- g[!is.na(g$LastName) & g$LastName == j, ]
+    if (length(unique(g2$CryoSleep)) == 1) {
+      count <- count + 1
+      total <- total + 1
+    }
+    else if (length(unique(g2$CryoSleep)) == 2) {
+      total <- total + 1
+    }
+  }
+}
+print(paste0(count, " / ", total, " = ", round(count/total, 2)))
+```
+
+## percentage of cabins having the same cryosleep
+
+```{r}
+count <- 0
+total <- 0
+for (i in unique(ship$Cabin[!is.na(ship$Cabin)])){
+  g <- ship[!is.na(ship$CryoSleep) & !is.na(ship$Cabin) & ship$Cabin == i, ]
+  if (nrow(g) <= 1) next
+  if (length(unique(g$CryoSleep)) == 1) {
+    count <- count + 1
+    total <- total + 1
+  }
+  else if (length(unique(g$CryoSleep)) == 2) {
+    total <- total + 1
+  }
+}
+print(paste0(count, " / ", total, " = ", round(count/total, 2)))
+```
+
+```{r}
+count <- 0
+total <- 0
+for (i in unique(ship$Deck[!is.na(ship$Deck)])){
+  g <- ship[!is.na(ship$CryoSleep) & !is.na(ship$Deck) & ship$Deck == i, ]
+  if (nrow(g) <= 1) next
+  if (length(unique(g$CryoSleep)) == 1) {
+    count <- count + 1
+    total <- total + 1
+  }
+  else if (length(unique(g$CryoSleep)) == 2) {
+    total <- total + 1
+  }
+}
+print(paste0(count, " / ", total, " = ", round(count/total, 2)))
+```
+
+
 
 # Models
 ## Read in Test and Modify
