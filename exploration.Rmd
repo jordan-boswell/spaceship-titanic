@@ -105,11 +105,13 @@ ship <- updateSpendingOfCryo(ship)
 spending_mean <- sapply(split(ship$Spending, ship$Age), mean)
 spending_25 <- sapply(split(ship$Spending, ship$Age), function(x){quantile(x, 0.25)})
 spending_75 <- sapply(split(ship$Spending, ship$Age), function(x){quantile(x, 0.75)})
+spending_length <- sapply(split(ship$Spending, ship$Age), length)
 
-plot(names(spending_mean), spending_mean, main='Spending by Age', xlab='Age', ylab='Spending', col='red', type='l', lwd=2, ylim=c(0, max(spending_75)))
+plot(names(spending_mean), spending_mean, main='Spending by Age', xlab='Age', ylab='Spending', col='red', type='l', lwd=2, ylim=c(0, max(spending_75)), xaxp=c(0, 80, 8))
 lines(names(spending_mean), spending_25, col='light blue', lwd=2)
 lines(names(spending_mean), spending_75, col='dark blue', lwd=2)
-legend(x='topleft', legend=c('25th percentile', 'mean', '75th percentile'), col=c('light blue', 'red', 'dark blue'), lwd=2)
+legend(x='topleft', legend=c('75th percentile', 'mean', '25th percentile'), col=c('dark blue', 'red', 'light blue'), lwd=2)
+barplot(spending_length*15, add=T, space=0, col=rgb(.5,.5,.5,0.05), border=rgb(.5,.5,.5,0.2), names.arg=NA)
 ```
 ### Update
 ```{r}
