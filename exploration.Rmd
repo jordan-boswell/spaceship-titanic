@@ -7,10 +7,7 @@ output: html_document
 
 
 ```{r}
-library(rigr)
-library(tidyverse)
 library(randomForest)
-library(caret)
 library(rpart)
 library(rpart.plot)
 ```
@@ -110,8 +107,9 @@ spending_length <- sapply(split(ship$Spending, ship$Age), length)
 plot(names(spending_mean), spending_mean, main='Spending by Age', xlab='Age', ylab='Spending', col='red', type='l', lwd=2, ylim=c(0, max(spending_75)), xaxp=c(0, 80, 8))
 lines(names(spending_mean), spending_25, col='light blue', lwd=2)
 lines(names(spending_mean), spending_75, col='dark blue', lwd=2)
+barplot(spending_length*15, add=T, space=0, col=rgb(.5,.5,.5,0.07), border=rgb(.5,.5,.5,0.22), names.arg=NA)
+abline(v=12, lty=2)
 legend(x='topleft', legend=c('75th percentile', 'mean', '25th percentile'), col=c('dark blue', 'red', 'light blue'), lwd=2)
-barplot(spending_length*15, add=T, space=0, col=rgb(.5,.5,.5,0.05), border=rgb(.5,.5,.5,0.2), names.arg=NA)
 ```
 ### Update
 ```{r}
@@ -405,6 +403,144 @@ for (i in unique(ship$Deck[!is.na(ship$Deck)])){
   }
 }
 print(paste0(count, " / ", total, " = ", round(count/total, 2)))
+```
+
+```{r}
+library(hexbin)
+train <- subset(ship, Train==T)
+hb <- hexbin(train$Spa, train$FoodCourt, IDs=T)
+hvp <- plot(hb, colramp=function(n, beg=1, end=92){LinGray(n, 1, 1)}, border='white', clip="off")
+pushHexport(hvp$plot.vp)
+ht <- hexTapply(hb, train$Transported, FUN=function(x){(sum(x)/length(x))*100})
+hb@count <- as.integer(ht)
+grid.hexagons(hb, colramp=LinGray, border='white')
+```
+
+
+# Shiny
+```{r}
+library(shiny)
+library(hexbin)
+
+set.seed(1)
+
+shipDecks <- split(ship, ship$Deck)
+
+buildTab <- function(deck) {
+    tabPanel(
+        paste0("Deck ",  deck),
+        fluidRow(plotOutput(paste0("Tree", deck))),
+        fluidRow(
+            column(
+                width=2,
+                inputPanel(
+                    radioButtons(
+                        paste0('HexXName', deck),
+                        label = 'x variable',
+                        choices = c('RoomService', 'FoodCourt', 'ShoppingMall', 'Spa', 'VRDeck'),
+                        selected = 'FoodCourt'
+                    ),
+                    radioButtons(
+                        paste0('HexYName', deck),
+                        label = 'y variable',
+                        choices = c('RoomService', 'FoodCourt', 'ShoppingMall', 'Spa', 'VRDeck'),
+                        selected = 'Spa'
+                    ),
+                    sliderInput(
+                        paste0('HexLim', deck),
+                        label='Spending range',
+                        min = 0,
+                        max = max(ship$Spending[ship$Deck == deck], na.rm=T),
+                        value = c(0, max(ship$Spending[ship$Deck == deck], na.rm=T))
+                    )
+                )
+            
+            ),
+            column(
+                width=5,
+                plotOutput(paste0('HexPlot1', deck))
+            ),
+            column(
+                width=5,
+                plotOutput(paste0('HexPlot2', deck))
+            )
+        )
+    )
+}
+
+renderSidebar <- function(deck) {
+    paste0("<p><strong>Passengers: </strong>", nrow(shipDecks[[deck]]), "</p>")
+}
+
+plotDt <- function(deck) {
+    rpart.plot(
+            rpart(Transported~., data=shipDecks[[deck]][, -c(1, 4, 13, 15, 16, 17, 19, 20, 24)])
+        )
+}
+
+plotHex <- function(deck, xName, yName, spendLim, transported=F) {
+    train <- subset(ship, Deck == deck & Train==T & Spending >= spendLim[1] & Spending <= spendLim[2])
+    hb <- hexbin(train[[xName]], train[[yName]], IDs=T)
+    if (transported == T) {
+        hvp <- plot(hb, colramp=function(n, beg=1, end=92){LinGray(n, 1, 1)}, border='white', clip="off")
+        pushHexport(hvp$plot.vp)
+        ht <- hexTapply(hb, train$Transported, FUN=function(x){(sum(x)/length(x))*100})
+        hb@count <- as.integer(ht)
+        grid.hexagons(hb, colramp=LinGray, border='white')
+    }
+    else {
+        plot(hb, colramp=LinGray, border='white', clip="off")
+    }
+}
+
+ui <- navbarPage(
+    title="Spaceship Titanic",
+    buildTab("T"),
+    buildTab("A"),
+    buildTab("B"),
+    buildTab("C"),
+    buildTab("D"),
+    buildTab("E"),
+    buildTab("F"),
+    buildTab("G")
+)
+
+server <- function(input, output) {
+    output$SidebarT <- renderText(renderSidebar("T"))
+    #output$TreeT <- renderPlot({plotDt("T")})
+    #output$HexPlot1T <- renderPlot({plotHex('T', input$HexXNameT, input$HexYNameT, input$HexLimT)})
+    #output$HexPlot2T <- renderPlot({plotHex('T', input$HexXNameT, input$HexYNameT, input$HexLimT, T)})
+    output$SidebarA <- renderText(renderSidebar("A"))
+    output$TreeA <- renderPlot({plotDt("A")})
+    output$HexPlot1A <- renderPlot({plotHex('A', input$HexXNameA, input$HexYNameA, input$HexLimA)})
+    output$HexPlot2A <- renderPlot({plotHex('A', input$HexXNameA, input$HexYNameA, input$HexLimA, T)})
+    output$SidebarB <- renderText(renderSidebar("B"))
+    output$TreeB <- renderPlot({plotDt("B")})
+    output$HexPlot1B <- renderPlot({plotHex('B', input$HexXNameB, input$HexYNameB, input$HexLimB)})
+    output$HexPlot2B <- renderPlot({plotHex('B', input$HexXNameB, input$HexYNameB, input$HexLimB, T)})
+    output$SidebarC <- renderText(renderSidebar("C"))
+    output$TreeC <- renderPlot({plotDt("C")})
+    output$HexPlot1C <- renderPlot({plotHex('C', input$HexXNameC, input$HexYNameC, input$HexLimC)})
+    output$HexPlot2C <- renderPlot({plotHex('C', input$HexXNameC, input$HexYNameC, input$HexLimC, T)})
+    output$SidebarD <- renderText(renderSidebar("D"))
+    output$TreeD <- renderPlot({plotDt("D")})
+    output$HexPlot1D <- renderPlot({plotHex('D', input$HexXNameD, input$HexYNameD, input$HexLimD)})
+    output$HexPlot2D <- renderPlot({plotHex('D', input$HexXNameD, input$HexYNameD, input$HexLimD, T)})
+    output$SidebarE <- renderText(renderSidebar("E"))
+    output$TreeE <- renderPlot({plotDt("E")})
+    output$HexPlot1E <- renderPlot({plotHex('E', input$HexXNameE, input$HexYNameE, input$HexLimE)})
+    output$HexPlot2E <- renderPlot({plotHex('E', input$HexXNameE, input$HexYNameE, input$HexLimE, T)})
+    output$SidebarF <- renderText(renderSidebar("F"))
+    output$TreeF <- renderPlot({plotDt("F")})
+    output$HexPlot1F <- renderPlot({plotHex('F', input$HexXNameF, input$HexYNameF, input$HexLimF)})
+    output$HexPlot2F <- renderPlot({plotHex('F', input$HexXNameF, input$HexYNameF, input$HexLimF, T)})
+    output$SidebarG <- renderText(renderSidebar("G"))
+    output$TreeG <- renderPlot({plotDt("G")})
+    output$HexPlot1G <- renderPlot({plotHex('G', input$HexXNameG, input$HexYNameG, input$HexLimG)})
+    output$HexPlot2G <- renderPlot({plotHex('G', input$HexXNameG, input$HexYNameG, input$HexLimG, T)})
+}
+
+shinyApp(ui, server)
 ```
 
 
