@@ -79,8 +79,8 @@ intersect(ship$GID[ship$Train], ship$GID[!ship$Train])
 
 
 # Fixing missing data
-## Cryosleep implies 0 spending
-## <=> spending implies not Cryosleep
+## CryoSleep implies 0 spending
+## <=> spending implies not CryoSleep
 ### Evidence
 ```{r}
 ftable(HasSpent~CryoSleep, data=ship)
@@ -90,7 +90,7 @@ ftable(HasSpent~CryoSleep, data=ship)
 updateSpendingOfCryo <- function(df){
   df[df$CryoSleep %in% T, c("RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck")] <- 0
   df <- updateSpending(df)
-  df$Cryosleep[df$HasSpent %in% T] <- F
+  df$CryoSleep[df$HasSpent %in% T] <- F
   df
 }
 ship <- updateSpendingOfCryo(ship)
@@ -121,7 +121,7 @@ updateSpendingOfChildren <- function(df){
 ship <- updateSpendingOfChildren(ship)
 ```
 
-## Does Cryosleep affect Cabin?
+## Does CryoSleep affect Cabin?
 ```{r}
 signif(table(ship$Deck[!is.na(ship$CryoSleep) & !is.na(ship$Deck) & ship$CryoSleep == T]) / sum(!is.na(ship$CryoSleep) & !is.na(ship$Deck) & ship$CryoSleep == T) * 100, 4)
 
@@ -316,7 +316,7 @@ heatarray <- function(c1, c2){
 ```
 
 
-## percentage of group/lastname/family having the same Cryosleep value
+## percentage of group/lastname/family having the same CryoSleep value
 
 ```{r}
 count <- 0
@@ -406,14 +406,29 @@ print(paste0(count, " / ", total, " = ", round(count/total, 2)))
 ```
 
 ```{r}
-library(hexbin)
-train <- subset(ship, Train==T)
-hb <- hexbin(train$Spa, train$FoodCourt, IDs=T)
+library(corrplot)
+
+shipCor <- ship[, c('Age', 'RoomService', 'FoodCourt', 'ShoppingMall', 'Spa', 'VRDeck', 'Transported', 'GroupSize', 'Num', 'Spending')]
+shipCor$CryoSleep <- as.numeric(ship$CryoSleep)
+shipCor$VIP <- as.numeric(ship$VIP)
+shipCor$Side <- ifelse(ship$Side == 'S', 1, 0)
+
+pcorr <- cor.mtest(shipCor, conf.level=0.95)
+corrplot(cor(shipCor, use='pairwise.complete.obs'), p.mat=pcorr$p, sig.level=0.10)
+```
+```{r}
+train <- subset(ship, Deck == 'D' & Train==T)
+hb <- hexbin(train[['Spa']], train[['FoodCourt']], IDs=T)
 hvp <- plot(hb, colramp=function(n, beg=1, end=92){LinGray(n, 1, 1)}, border='white', clip="off")
 pushHexport(hvp$plot.vp)
 ht <- hexTapply(hb, train$Transported, FUN=function(x){(sum(x)/length(x))*100})
+hb_count <- hb@count
 hb@count <- as.integer(ht)
 grid.hexagons(hb, colramp=LinGray, border='white')
+    
+loess_fit <- loess(hb@ycm ~ hb@xcm, weights = hb_count, span = .4)
+pseq <- seq(hb@xbnds[1]+1, hb@xbnds[2]-1, length = 100)
+grid.lines(pseq, predict(loess_fit,pseq), gp = gpar(col = 2, lwd=2.5), default.units = "native")
 ```
 
 
@@ -421,6 +436,7 @@ grid.hexagons(hb, colramp=LinGray, border='white')
 ```{r}
 library(shiny)
 library(hexbin)
+library(corrplot)
 
 set.seed(1)
 
@@ -481,16 +497,21 @@ plotDt <- function(deck) {
 plotHex <- function(deck, xName, yName, spendLim, transported=F) {
     train <- subset(ship, Deck == deck & Train==T & Spending >= spendLim[1] & Spending <= spendLim[2])
     hb <- hexbin(train[[xName]], train[[yName]], IDs=T)
+    hb_count <- hb@count
     if (transported == T) {
-        hvp <- plot(hb, colramp=function(n, beg=1, end=92){LinGray(n, 1, 1)}, border='white', clip="off")
+        hvp <- plot(hb, colramp=function(n, beg=1, end=92){LinGray(n, 1, 1)}, border='white', clip="off", legend=F, main='Transported', xlab=xName, ylab=yName)
         pushHexport(hvp$plot.vp)
         ht <- hexTapply(hb, train$Transported, FUN=function(x){(sum(x)/length(x))*100})
         hb@count <- as.integer(ht)
         grid.hexagons(hb, colramp=LinGray, border='white')
+        grid.hexlegend(2, 1, 1, 0.2, colramp=LinGray, maxcnt=100, colorcut=seq(0, 1, length = 17))
     }
     else {
-        plot(hb, colramp=LinGray, border='white', clip="off")
+        pushHexport(plot(hb, colramp=LinGray, border='white', clip="off", main='Histogram', xlab=xName, ylab=yName)$plot.vp)
     }
+    loess_fit <- loess(hb@ycm ~ hb@xcm, weights = hb_count, span = .4)
+    pseq <- seq(hb@xbnds[1]+1, hb@xbnds[2]-1, length = 100)
+    grid.lines(pseq, predict(loess_fit,pseq), gp = gpar(col = 2, lwd=2.5), default.units = "native")
 }
 
 ui <- navbarPage(
@@ -506,10 +527,10 @@ ui <- navbarPage(
 )
 
 server <- function(input, output) {
+    ship_subset <- reactive({
+        
+    })
     output$SidebarT <- renderText(renderSidebar("T"))
-    #output$TreeT <- renderPlot({plotDt("T")})
-    #output$HexPlot1T <- renderPlot({plotHex('T', input$HexXNameT, input$HexYNameT, input$HexLimT)})
-    #output$HexPlot2T <- renderPlot({plotHex('T', input$HexXNameT, input$HexYNameT, input$HexLimT, T)})
     output$SidebarA <- renderText(renderSidebar("A"))
     output$TreeA <- renderPlot({plotDt("A")})
     output$HexPlot1A <- renderPlot({plotHex('A', input$HexXNameA, input$HexYNameA, input$HexLimA)})
