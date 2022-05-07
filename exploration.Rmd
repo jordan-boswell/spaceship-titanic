@@ -216,6 +216,21 @@ rm(the_group)
 rm(home_planets)
 ```
 
+```{r}
+ship_cabins <- aggregate(.~Cabin, data=ship[!is.na(ship$Cabin),], FUN=function(x){
+  c(
+    Deck <- print(x),
+    Side <- x$Side,
+    Num <- x$Num,
+    Size <- length(x),
+    NumCryo <- length(x[x$CryoSleep==T]),
+    NumTransported <- sum(x$Transported, na.rm=T)
+    
+  )
+})
+```
+
+
 ## Groups share the same home planet (but not destination)
 ## Evidence
 ```{r}
