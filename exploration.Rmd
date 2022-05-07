@@ -232,11 +232,18 @@ for (i in 1:nrow(ship)){
 }
 ```
 
-
+## If a person has a group that is all in the same cabin, then
+## should we expect that person to also be in that same cabin?
 ```{r}
 for (i in 2:max(ship_groups$Size)){
     print(paste0("All Non NA Same Cabin (For Groups With Non-NA Size ", i, "):"))
-    print(table(ship_groups$AllNonNASameCabin[ship_groups$Size - ship_groups$CabinNA == i & (ship_groups$UniqueCabins == 1 | (ship_groups$UniqueCabins == 2 & ship_groups$NumInSecondCabin == 1))]))
+    s <- ship_groups[ship_groups$Size - ship_groups$CabinNA == i & (ship_groups$UniqueCabins == 1 | (ship_groups$UniqueCabins == 2 & ship_groups$NumInSecondCabin == 1)),]
+    st <- table(s$AllNonNASameCabin)
+    print(st)
+    num_true <- ifelse('TRUE' %in% names(st), st[['TRUE']], 0)
+    num_false <- ifelse('FALSE' %in% names(st), st[['FALSE']], 0)
+    p_same <- i * num_true / (i*num_true + num_false)
+    print(paste0('Probability of same cabin: ', round(p_same,2)))
     print("-------------------------------------------")
 }
 
@@ -251,22 +258,19 @@ ship$LastName <- sapply(ship$Name, function(x){strsplit(x,split = " ")}[[1]][2])
 ```
 
 
-#  Same last name, same group: for each deck
+#  How many groups is each last name a part of?
 
 ```{r}
-#for(j in C("A","B","C", "D","E", "F","G", "T")){
-  deck <- subset(ship, Deck=="A")
-  for(i in unique(deck$LastName)){
-    Name <- subset(deck, LastName == i)
-    if (nrow(Name) ==1)
-      next
-    else (length(unique(Name$GID)) >1)
-      print(Name$GID)
-  }
-#}
-Name
+lastnames <- unique(ship$LastName[!is.na(ship$LastName)])
+num_people <- vector(mode='integer', length=length(lastnames))
+num_groups <- vector(mode='integer', length=length(lastnames))
 
-
+for (i in 1:length(lastnames)) {
+    lastname_subset <- ship$GID[!is.na(ship$LastName) & ship$LastName == lastnames[i]]
+    num_people[i] <- length(lastname_subset)
+    num_groups[i] <- length(unique(lastname_subset))
+}
+print(summary(num_people/num_groups))
 ```
 # Same last name,same group !-> same cabin
 
