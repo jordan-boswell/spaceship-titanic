@@ -217,17 +217,19 @@ rm(home_planets)
 ```
 
 ```{r}
-ship_cabins <- aggregate(.~Cabin, data=ship[!is.na(ship$Cabin),], FUN=function(x){
-  c(
-    Deck <- print(x),
-    Side <- x$Side,
-    Num <- x$Num,
-    Size <- length(x),
-    NumCryo <- length(x[x$CryoSleep==T]),
-    NumTransported <- sum(x$Transported, na.rm=T)
-    
-  )
-})
+splits <- split(ship[!is.na(ship$Cabin), ], ship$Cabin[!is.na(ship$Cabin)])
+ship_cabins <- data.frame(t(
+    sapply(splits, function(x){c(
+        Size = length(x$PassengerId),
+        Cabin = x$Cabin[1],
+        Deck = x$Deck[1],
+        Side = x$Side[1],
+        Num = x$Num[1],
+        NumTransported = sum(x$Transported, na.rm=T),
+        NumNotTransported = sum(x$Transported==FALSE, na.rm=T),
+        NumCryo = sum(x$CryoSleep, na.rm=T)
+    )})
+))
 ```
 
 
