@@ -33,16 +33,15 @@ create_base_columns <- function(df){
     
     df$CryoSleep <- as.logical(df$CryoSleep)
     
-    df$Deck <- as.character(mapply(function(x,y){if(is.na(x)){NA}else{substr(x,y[2],y[3]-2)}},
-                          df$Cabin,
-                          regexec("(.*?)/(.*?)/(.*)", df$Cabin)))
-    df$Num <- as.integer(mapply(function(x,y){if(is.na(x)){NA}else{substr(x,y[3],y[4]-2)}},
-                          df$Cabin,
-                          regexec("(.*?)/(.*?)/(.*)", df$Cabin)))
-    df$Side <- as.character(mapply(function(x,y){if(is.na(x)){NA}else{substr(x,y[4],nchar(x))}},
-                          df$Cabin,
-                          regexec("(.*?)/(.*?)/(.*)", df$Cabin)))
-    #df$Cabin <- sapply(df$Cabin, function(x){if (x=="") NA else x})
+    df$Deck <- as.character(sapply(df$Cabin, 
+                                   function(x){ifelse(is.na(x), NA, strsplit(x, '/')[[1]][1])}
+                                   ))
+    df$Num <- as.integer(sapply(df$Cabin, 
+                                function(x){ifelse(is.na(x), NA, strsplit(x, '/')[[1]][2])}
+                                ))
+    df$Side <- as.character(sapply(df$Cabin, 
+                                   function(x){ifelse(is.na(x),NA, strsplit(x, '/')[[1]][3])}
+                                   ))
     
     df$Destination <- as.factor(df$Destination)
     
@@ -85,11 +84,11 @@ intersect(ship$GID[ship$Train], ship$GID[!ship$Train])
 ```{r}
 ftable(HasSpent~CryoSleep, data=ship)
 ```
+
 ### Update
 ```{r}
 updateSpendingOfCryo <- function(df){
   df[df$CryoSleep %in% T, c("RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck")] <- 0
-  df <- updateSpending(df)
   df$CryoSleep[df$HasSpent %in% T] <- F
   df
 }
@@ -110,6 +109,8 @@ lines(names(spending_mean), spending_75, col='dark blue', lwd=2)
 barplot(spending_length*15, add=T, space=0, col=rgb(.5,.5,.5,0.07), border=rgb(.5,.5,.5,0.22), names.arg=NA)
 abline(v=12, lty=2)
 legend(x='topleft', legend=c('75th percentile', 'mean', '25th percentile'), col=c('dark blue', 'red', 'light blue'), lwd=2)
+
+table(as.factor(ifelse(ship$Age <= 12, 1, 0)), ship$HasSpent)
 ```
 ### Update
 ```{r}
@@ -121,10 +122,12 @@ updateSpendingOfChildren <- function(df){
 ship <- updateSpendingOfChildren(ship)
 ```
 
-## Does CryoSleep affect Cabin?
+## Does CryoSleep affect Deck?
 ```{r}
+print('Distribution of sleeping people:')
 signif(table(ship$Deck[!is.na(ship$CryoSleep) & !is.na(ship$Deck) & ship$CryoSleep == T]) / sum(!is.na(ship$CryoSleep) & !is.na(ship$Deck) & ship$CryoSleep == T) * 100, 4)
 
+print('For each deck, what percentage are sleeping:')
 signif(table(ship$Deck[!is.na(ship$CryoSleep) & !is.na(ship$Deck) & ship$CryoSleep == T]) / tapply(ship$Deck, ship$Deck, FUN=length)[-8] * 100, 4)
 ```
 
@@ -136,6 +139,14 @@ for (deck in sort(unique(ship$Deck))){
     hist(ship$Num[!is.na(ship$Deck) & ship$Deck == deck], main=deck)
 }
 ```
+
+```{r}
+# Average number of people per room (for each deck)
+tapply(ship$Num, ship$Deck, function(x){length(x)/length(unique(x))})
+
+tapply(ship$Age, ship$Deck, summary)
+```
+
 
 ## Hypothesis: People in the same group of at least 2 members live in the same Deck for cabins A, B, C
 ### Create Useful Columns
