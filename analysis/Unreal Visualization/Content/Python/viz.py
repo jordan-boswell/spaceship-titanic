@@ -16,8 +16,12 @@ for int_col in int_cols:
 #eas = u.EditorActorSubsystem()
 cube_asset = u.load_asset('/Engine/BasicShapes/Cube.Cube')
 sphere_asset = u.load_asset('/Engine/BasicShapes/Sphere.Sphere')
-transported_material = u.load_asset('/Game/Materials/Transported.Transported')
-not_transported_material = u.load_asset('/Game/Materials/NotTransported.NotTransported')
+na_transported_cryosleep = u.load_asset('/Game/Materials/NATransportedCryosleep.NATransportedCryosleep')
+na_transported_not_cryosleep = u.load_asset('/Game/Materials/NATransportedNotCryosleep.NATransportedNotCryosleep')
+not_transported_cryosleep = u.load_asset('/Game/Materials/NotTransportedCryosleep.NotTransportedCryosleep')
+not_transported_not_cryosleep = u.load_asset('/Game/Materials/NotTransportedNotCryosleep.NotTransportedNotCryosleep')
+transported_cryosleep = u.load_asset('/Game/Materials/TransportedCryosleep.TransportedCryosleep')
+transported_not_cryosleep = u.load_asset('/Game/Materials/TransportedNotCryosleep.TransportedNotCryosleep')
 
 # Temp Stuff
 max_cabin_size = 8
@@ -60,7 +64,21 @@ for deck in decks:
                 position = u.Vector(x, port_y - port_cabin_passenger_index * actor_width, z)
                 port_cabin_passenger_index += 1
             actor = u.EditorLevelLibrary.spawn_actor_from_object(sphere_asset, position)
+            mesh = actor.get_component_by_class(u.StaticMeshComponent)
             if pd.notnull(passenger.Transported):
-                mesh = actor.get_component_by_class(u.StaticMeshComponent)
-                mesh.set_material(0, transported_material if passenger.Transported == 1 else not_transported_material)
+                if passenger.Transported == 1:
+                    if pd.notnull(passenger.CryoSleep) & passenger.CryoSleep == 1:
+                        mesh.set_material(0, transported_cryosleep)
+                    else:
+                        mesh.set_material(0, transported_not_cryosleep)
+                else:
+                    if pd.notnull(passenger.CryoSleep) & passenger.CryoSleep == 1:
+                        mesh.set_material(0, not_transported_cryosleep)
+                    else:
+                        mesh.set_material(0, not_transported_not_cryosleep)
+            else:
+                if pd.notnull(passenger.CryoSleep) & passenger.CryoSleep == 1:
+                    mesh.set_material(0, na_transported_cryosleep)
+                else:
+                    mesh.set_material(0, na_transported_not_cryosleep)
     deck_i += 1
