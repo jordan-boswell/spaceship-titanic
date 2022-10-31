@@ -23,7 +23,7 @@ not_transported_not_cryosleep = u.load_asset('/Game/Materials/NotTransportedNotC
 transported_cryosleep = u.load_asset('/Game/Materials/TransportedCryosleep.TransportedCryosleep')
 transported_not_cryosleep = u.load_asset('/Game/Materials/TransportedNotCryosleep.TransportedNotCryosleep')
 
-# Temp Stuff
+# Globals
 max_cabin_size = 8
 room_width = max_cabin_size * 100
 room_height = 400

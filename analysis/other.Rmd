@@ -1,0 +1,236 @@
+---
+title: "Other"
+author: "Jordan Boswell and Thuy Nguyen"
+date: "2022-10-30"
+output: pdf_document
+---
+
+# Shiny
+```{r}
+library(shiny)
+library(hexbin)
+library(corrplot)
+
+set.seed(1)
+
+shipDecks <- split(ship, ship$Deck)
+
+buildTab <- function(deck) {
+    tabPanel(
+        paste0("Deck ",  deck),
+        fluidRow(plotOutput(paste0("Tree", deck))),
+        fluidRow(
+            column(
+                width=2,
+                inputPanel(
+                    radioButtons(
+                        paste0('HexXName', deck),
+                        label = 'x variable',
+                        choices = c('RoomService', 'FoodCourt', 'ShoppingMall', 'Spa', 'VRDeck'),
+                        selected = 'FoodCourt'
+                    ),
+                    radioButtons(
+                        paste0('HexYName', deck),
+                        label = 'y variable',
+                        choices = c('RoomService', 'FoodCourt', 'ShoppingMall', 'Spa', 'VRDeck'),
+                        selected = 'Spa'
+                    ),
+                    sliderInput(
+                        paste0('HexLim', deck),
+                        label='Spending range',
+                        min = 0,
+                        max = max(ship$Spending[ship$Deck == deck], na.rm=T),
+                        value = c(0, max(ship$Spending[ship$Deck == deck], na.rm=T))
+                    )
+                )
+            
+            ),
+            column(
+                width=5,
+                plotOutput(paste0('HexPlot1', deck))
+            ),
+            column(
+                width=5,
+                plotOutput(paste0('HexPlot2', deck))
+            )
+        )
+    )
+}
+
+renderSidebar <- function(deck) {
+    paste0("<p><strong>Passengers: </strong>", nrow(shipDecks[[deck]]), "</p>")
+}
+
+plotDt <- function(deck) {
+    rpart.plot(
+            rpart(Transported~., data=shipDecks[[deck]][, -c(1, 4, 13, 15, 16, 17, 19, 20, 24)])
+        )
+}
+
+plotHex <- function(deck, xName, yName, spendLim, transported=F) {
+    train <- subset(ship, Deck == deck & Train==T & Spending >= spendLim[1] & Spending <= spendLim[2])
+    hb <- hexbin(train[[xName]], train[[yName]], IDs=T)
+    hb_count <- hb@count
+    if (transported == T) {
+        hvp <- plot(hb, colramp=function(n, beg=1, end=92){LinGray(n, 1, 1)}, border='white', clip="off", legend=F, main='Transported', xlab=xName, ylab=yName)
+        pushHexport(hvp$plot.vp)
+        ht <- hexTapply(hb, train$Transported, FUN=function(x){(sum(x)/length(x))*100})
+        hb@count <- as.integer(ht)
+        grid.hexagons(hb, colramp=LinGray, border='white')
+        grid.hexlegend(2, 1, 1, 0.2, colramp=LinGray, maxcnt=100, colorcut=seq(0, 1, length = 17))
+    }
+    else {
+        pushHexport(plot(hb, colramp=LinGray, border='white', clip="off", main='Histogram', xlab=xName, ylab=yName)$plot.vp)
+    }
+    loess_fit <- loess(hb@ycm ~ hb@xcm, weights = hb_count, span = .4)
+    pseq <- seq(hb@xbnds[1]+1, hb@xbnds[2]-1, length = 100)
+    grid.lines(pseq, predict(loess_fit,pseq), gp = gpar(col = 2, lwd=2.5), default.units = "native")
+}
+
+ui <- navbarPage(
+    title="Spaceship Titanic",
+    buildTab("T"),
+    buildTab("A"),
+    buildTab("B"),
+    buildTab("C"),
+    buildTab("D"),
+    buildTab("E"),
+    buildTab("F"),
+    buildTab("G")
+)
+
+server <- function(input, output) {
+    ship_subset <- reactive({
+        
+    })
+    output$SidebarT <- renderText(renderSidebar("T"))
+    output$SidebarA <- renderText(renderSidebar("A"))
+    output$TreeA <- renderPlot({plotDt("A")})
+    output$HexPlot1A <- renderPlot({plotHex('A', input$HexXNameA, input$HexYNameA, input$HexLimA)})
+    output$HexPlot2A <- renderPlot({plotHex('A', input$HexXNameA, input$HexYNameA, input$HexLimA, T)})
+    output$SidebarB <- renderText(renderSidebar("B"))
+    output$TreeB <- renderPlot({plotDt("B")})
+    output$HexPlot1B <- renderPlot({plotHex('B', input$HexXNameB, input$HexYNameB, input$HexLimB)})
+    output$HexPlot2B <- renderPlot({plotHex('B', input$HexXNameB, input$HexYNameB, input$HexLimB, T)})
+    output$SidebarC <- renderText(renderSidebar("C"))
+    output$TreeC <- renderPlot({plotDt("C")})
+    output$HexPlot1C <- renderPlot({plotHex('C', input$HexXNameC, input$HexYNameC, input$HexLimC)})
+    output$HexPlot2C <- renderPlot({plotHex('C', input$HexXNameC, input$HexYNameC, input$HexLimC, T)})
+    output$SidebarD <- renderText(renderSidebar("D"))
+    output$TreeD <- renderPlot({plotDt("D")})
+    output$HexPlot1D <- renderPlot({plotHex('D', input$HexXNameD, input$HexYNameD, input$HexLimD)})
+    output$HexPlot2D <- renderPlot({plotHex('D', input$HexXNameD, input$HexYNameD, input$HexLimD, T)})
+    output$SidebarE <- renderText(renderSidebar("E"))
+    output$TreeE <- renderPlot({plotDt("E")})
+    output$HexPlot1E <- renderPlot({plotHex('E', input$HexXNameE, input$HexYNameE, input$HexLimE)})
+    output$HexPlot2E <- renderPlot({plotHex('E', input$HexXNameE, input$HexYNameE, input$HexLimE, T)})
+    output$SidebarF <- renderText(renderSidebar("F"))
+    output$TreeF <- renderPlot({plotDt("F")})
+    output$HexPlot1F <- renderPlot({plotHex('F', input$HexXNameF, input$HexYNameF, input$HexLimF)})
+    output$HexPlot2F <- renderPlot({plotHex('F', input$HexXNameF, input$HexYNameF, input$HexLimF, T)})
+    output$SidebarG <- renderText(renderSidebar("G"))
+    output$TreeG <- renderPlot({plotDt("G")})
+    output$HexPlot1G <- renderPlot({plotHex('G', input$HexXNameG, input$HexYNameG, input$HexLimG)})
+    output$HexPlot2G <- renderPlot({plotHex('G', input$HexXNameG, input$HexYNameG, input$HexLimG, T)})
+}
+
+shinyApp(ui, server)
+```
+
+
+
+# Models
+## Read in Test and Modify
+```{r}
+test <- read.csv("test.csv", na.strings=c("NA", ""))
+test <- create_base_columns(test)
+test <- updateSpending(test)
+test$HomePlanet[test$HomePlanet==""] <- NA
+test$Destination[test$Destination==""] <- NA
+test$Name[test$Name==""] <- NA
+test <- updateSpendingOfCryo(test)
+test <- updateSpendingOfChildren(test)
+test <- updateOthersCabins(test)
+```
+
+## Imputation
+```{r}
+library(missForest)
+
+variables <- c("HomePlanet", "CryoSleep", "Destination", "Age", "VIP", "GroupSize", "Deck", "Side", "Spending")
+
+test$CryoSleep <- as.factor(test$CryoSleep)
+test$Age <- as.numeric(test$Age)
+test$Deck <- as.factor(test$Deck)
+test$VIP <- as.factor(test$VIP)
+test$GroupSize <- as.numeric(test$GroupSize)
+test$Side <- as.factor(test$Side)
+
+test[, variables] <- missForest(test[, variables])$ximp
+test <- updateSpending(test)
+test <- updateSpendingOfCryo(test)
+test <- updateSpendingOfChildren(test)
+test <- updateOthersCabins(test)
+
+ship$CryoSleep <- as.factor(ship$CryoSleep)
+ship$Age <- as.numeric(ship$Age)
+ship$Deck <- as.factor(ship$Deck)
+ship$VIP <- as.factor(ship$VIP)
+ship$GroupSize <- as.numeric(ship$GroupSize)
+ship$Side <- as.factor(ship$Side)
+
+ship[, variables] <- missForest(ship[, variables])$ximp
+ship <- updateSpending(ship)
+ship <- updateSpendingOfCryo(ship)
+ship <- updateSpendingOfChildren(ship)
+ship <- updateOthersCabins(ship)
+```
+
+
+
+
+# Predict Cryoshleep
+
+```{r}
+newdat <- ship[is.na(ship$CryoSleep),]
+
+g1 <-glm(as.factor(CryoSleep)~ GroupSize + RoomService+ FoodCourt+ ShoppingMall+Spa+VRDeck+as.factor(VIP)+Age+Deck+Num+Side, data= ship,na.action = "na.omit", family = "binomial")
+pred <- predict(g1, newdata= newdat, type = "response")>=0.5
+pred
+
+```
+
+## decision tree
+
+```{r}
+rpart.plot(rpart(Transported~HomePlanet+CryoSleep+Destination+Age+VIP+Spending+GroupSize+Deck+Num+Side, data= ship, control=rpart.control(cp=0.005)))
+```
+
+
+
+## GLMS
+
+```{r}
+glm1 <-glm(Transported~ Age+Spa+Spending+OthersTransported+as.factor(HomePlanet)+as.factor(VIP)+GroupSize +VRDeck+HasSpent +CryoSleep+RoomService+FoodCourt +as.factor(Deck)+Destination+ShoppingMall+as.numeric(Num)+as.factor(Side), data = ship, family = "binomial")
+
+
+
+
+pred <- predict(glm1, newdata = test,type = "response" )>=0.5
+
+pred <- ifelse(is.na(pred), TRUE, pred)
+
+pred <- ifelse(pred =="TRUE", "True", "False")
+
+write.csv(data.frame("PassengerId" = test$PassengerId, "Transported" = pred), row.names = FALSE,  quote = FALSE, file = "submission.csv")
+```
+
+
+## Random Forest
+```{r}
+ship$Transported <- as.factor(ship$Transported)
+rf <- randomForest(Transported~., data=ship[, c(variables, "Transported")])
+predictions <- predict(rf, newdata=test)
+predictions <- ifelse(predictions == "TRUE", "True", "False")
+write.csv(list(PassengerId=test$PassengerId, Transported=predictions), file="submission.csv", row.names=F, quote=F)
+```

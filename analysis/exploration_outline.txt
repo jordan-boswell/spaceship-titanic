@@ -1,0 +1,39 @@
+
+  22: # Read data and format columns
+
+  66: # Add Columns
+  67: ## Spending
+  83: ## Last Name
+  88: ## Group
+  89: ### Separate Group Dataset
+ 145: ### Group Columns
+ 168: ## Cabin
+ 169: ### Separate Cabin Dataset
+ 186: ### Cabin Columns
+
+ 188: # EDA
+ 189: ## test$GID and train$GID are disjoint
+ 194: ## CryoSleep iff 0 spending
+ 195: ### Evidence
+ 200: ### Update
+ 210: ## Young children (Age <= 12) don't spend money
+ 211: ### Evidence
+ 227: ### Update
+ 237: ## Deck
+ 238: ### Does CryoSleep affect Deck?
+ 239: #### Distribution of CryoSleep
+ 243: #### Per-deck percentage of CryoSleep
+ 248: ### Exploring Num within each Deck
+ 256: ### Other
+ 264: ## Groups share the same home planet (but not destination)
+ 265: ## Evidence
+ 271: ## Update
+ 280: ## If a person has a group that is all in the same cabin, then
+ 281: ## should we expect that person to also be in that same cabin?
+
+ 298: #  How many groups is each last name a part of?
+
+ 312: # Same last name,same group !-> same cabin
+ 338: ## Heat-maps
+ 360: ## percentage of group/lastname/family having the same CryoSleep value
+ 413: ## percentage of cabins having the same cryosleep
