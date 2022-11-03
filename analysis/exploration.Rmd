@@ -7,7 +7,7 @@ output: html_document
 
 
 ```{r setup, include=FALSE}
-knitr::opts_knit$set(echo = TRUE, root.dir = 'C:/Users/jbos1/Desktop/Projects/Kaggle/spaceship-titanic/data')
+knitr::opts_knit$set(echo = TRUE, root.dir = '~/Documents/GitHub/spaceship-titanic/data')
 ```
 
 # Read data and format columns
@@ -114,6 +114,75 @@ updateSpendingOfChildren <- function(df){
 ship <- updateSpendingOfChildren(ship)
 ```
 
+## Link Between Homeplanet and Deck: 
+Deck G implies Earth
+Deck A,B,C,T implies Europa
+### Evidence
+```{r}
+ship$Deck <- factor(ship$Deck)
+ship$Side <- factor(ship$Side)
+table(ship$HomePlanet, ship$Deck)
+```
+
+### Update
+```{r}
+ship[!is.na(ship$Deck)&ship$Deck == "G" & is.na(ship$HomePlanet), "HomePlanet" ] <- "Earth"
+ship[!is.na(ship$Deck)&ship$Deck %in% c("A", "B", "C", "T") & is.na(ship$HomePlanet), "HomePlanet" ] <- "Europa"
+```
+
+## Same group implies same side
+### Evidence
+```{r}
+#check
+uni_GID <- unique(ship$GID)
+unique(sapply(uni_GID, function(i){length(unique(ship$Side[!is.na(ship$Side) & ship$GID ==i]))}))
+```
+
+### Update
+```{r}
+uni_side<- sapply(uni_GID,function(i){ship$Side[!is.na(ship$Side) & ship$GID ==i][1]})
+dat <- data.frame(uni_GID, uni_side)
+for(i in uni_GID){
+  ship$Side[is.na(ship$Side) & ship$GID ==i] <-  dat$uni_side[dat$uni_GID ==i]
+}
+rm(dat, uni_side, uni_GID)
+```
+
+## Surnames are Unique to HomePlanet
+### Evidence
+```{r}
+intersect(ship$LastName[!is.na(ship$LastName) & !is.na(ship$HomePlanet) &ship$HomePlanet =="Earth"], ship$LastName[!is.na(ship$LastName) & !is.na(ship$HomePlanet) & ship$HomePlanet == "Europa"])
+intersect(ship$LastName[!is.na(ship$LastName) & !is.na(ship$HomePlanet) &ship$HomePlanet =="Earth"], ship$LastName[!is.na(ship$LastName) & !is.na(ship$HomePlanet) & ship$HomePlanet == "March"])
+intersect(ship$LastName[!is.na(ship$LastName) & !is.na(ship$HomePlanet) &ship$HomePlanet =="March"], ship$LastName[!is.na(ship$LastName) & !is.na(ship$HomePlanet) & ship$HomePlanet == "Europa"])
+```
+
+### Update
+```{r}
+earth_sur <- unique(ship$LastName[!is.na(ship$LastName) & !is.na(ship$HomePlanet) & ship$HomePlanet == "Earth"])
+mars_sur <- unique(ship$LastName[!is.na(ship$LastName) & !is.na(ship$HomePlanet) & ship$HomePlanet == "Mars"])
+europa_sur <- unique(ship$LastName[!is.na(ship$LastName) & !is.na(ship$HomePlanet) & ship$HomePlanet == "Europa"])
+uni_surname <- c(earth_sur, mars_sur, europa_sur)
+dat <- data.frame("home" = factor(c(rep("Earth", length(earth_sur)),
+                           rep("Mars", length(mars_sur)),
+                           rep("Europa", length(europa_sur)))),
+                  "LastName" = uni_surname)
+for(i in uni_surname){
+  ship$HomePlanet[is.na(ship$HomePlanet)&  !is.na(ship$LastName) & ship$LastName ==i] <- dat$home[dat$LastName==i]
+}
+rm(dat, uni_surname)
+```
+
+## Earth Doesn't Have VIP
+### Evidence
+```{r}
+table(ship$HomePlanet, ship$VIP)
+```
+
+### Update
+```{r}
+ship$VIP[!is.na(ship$HomePlanet) & is.na(ship$VIP) & ship$HomePlanet == 'Earth'] <- F
+```
+
 ## Deck
 ### Does CryoSleep affect Deck?
 #### Distribution of CryoSleep
@@ -122,7 +191,7 @@ signif(table(ship$Deck[!is.na(ship$CryoSleep) & !is.na(ship$Deck) & ship$CryoSle
 ```
 #### Per-deck percentage of CryoSleep
 ```{r}
-signif(table(ship$Deck[!is.na(ship$CryoSleep) & !is.na(ship$Deck) & ship$CryoSleep == T]) / tapply(ship$Deck, ship$Deck, FUN=length)[-8] * 100, 4)
+signif(table(ship$Deck[!is.na(ship$CryoSleep) & !is.na(ship$Deck) & ship$CryoSleep == T]) / tapply(ship$Deck, ship$Deck, FUN=length) * 100, 4)
 ```
 
 ### Exploring Num within each Deck
@@ -176,7 +245,7 @@ rm(splits)
 
 ### Add Group Columns
 ```{r}
-ship <- merge(ship, ship_groups, by='GID', all.x=T) 
+ship <- merge(ship, ship_groups, by='GID', all.x=T)
 ```
 
 ## Cabin
