@@ -43,6 +43,7 @@ ls_recipe <- recipe(Transported ~., data = ship_train) %>%
 
 #workflow
 ls_wflow <- workflow() %>% add_model(ls_mod) %>% add_recipe(ls_recipe)
+
 # create grid for tuning
 ls_mod_grid <- tibble(penalty = 10^seq(-4, -1, length.out = 30))
 
@@ -53,16 +54,9 @@ ls_res <- ls_wflow %>% tune_grid(resample = ship_fold ,
                                  metrics= metric_set(roc_auc))
 
 
-# The best model
-top_models <-
-  ls_res %>% 
-  show_best("roc_auc", n = 15) %>%  # show the best 15ish models
-  arrange(penalty) 
-top_models
+
 
 # obtain prediction
-
-
 
 ls_final_wf <- ls_wflow %>%
     finalize_workflow(select_best(ls_res))
