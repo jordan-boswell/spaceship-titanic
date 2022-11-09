@@ -7,15 +7,16 @@ output: html_document
 
 
 ```{r setup, include=FALSE}
-# Thuy: '~/Documents/GitHub/spaceship-titanic/data'
-# Jordan: 'C:/Users/jbos1/Desktop/Projects/Kaggle/spaceship-titanic/data'
-knitr::opts_knit$set(echo = TRUE, root.dir = 'C:/Users/jbos1/Desktop/Projects/Kaggle/spaceship-titanic/data')
+# Thuy: '~/Documents/GitHub/spaceship-titanic'
+# Jordan: 'C:/Users/jbos1/Desktop/Projects/Kaggle/spaceship-titanic'
+knitr::opts_knit$set(echo = TRUE, root.dir = 'C:/Users/jbos1/Desktop/Projects/Kaggle/spaceship-titanic')
+source('analysis/0 Shared Functions.R')
 ```
 
 # Read data and format columns
 ```{r}
-train <- read.csv("train.csv", na.strings=c("NA", ""))
-test <- read.csv("test.csv", na.strings=c("NA", ""))
+train <- read.csv("data/train.csv", na.strings=c("NA", ""))
+test <- read.csv("data/test.csv", na.strings=c("NA", ""))
 train$Train <- TRUE
 test$Train <- FALSE
 test$Transported <- NA
@@ -37,28 +38,11 @@ ship$Transported <- as.logical(ship$Transported)
 # Add Columns
 ## Deck/Side/Num
 ```{r}
-updateDeckSideNum <- function (df) {
-    df$Deck <- as.character(sapply(df$Cabin, function(x){ifelse(is.na(x), NA, strsplit(x, '/')[[1]][1])}))
-    df$Num <- as.integer(sapply(df$Cabin, function(x){ifelse(is.na(x), NA, strsplit(x, '/')[[1]][2])}))
-    df$Side <- as.character(sapply(df$Cabin, function(x){ifelse(is.na(x),NA, strsplit(x, '/')[[1]][3])}))
-    df
-}
 ship <- updateDeckSideNum(ship)
 ```
 
 ## Spending
 ```{r}
-updateSpending <- function(df){
-  rsna <- is.na(df$RoomService)
-  fcna <- is.na(df$FoodCourt)
-  smna <- is.na(df$ShoppingMall)
-  sna <- is.na(df$Spa)
-  vrdna <- is.na(df$VRDeck)
-  allna <- rsna & fcna & smna & sna & vrdna
-  df$Spending <- ifelse(allna, NA, ifelse(rsna, 0, df$RoomService) + ifelse(fcna, 0, df$FoodCourt) + ifelse(smna, 0, df$ShoppingMall) + ifelse(sna, 0, df$Spa) + ifelse(vrdna, 0, df$VRDeck))
-  df$HasSpent <- df$Spending > 0
-  df
-}
 ship <- updateSpending(ship)
 ```
 
@@ -81,11 +65,6 @@ ftable(HasSpent~CryoSleep, data=ship)
 
 ### Update
 ```{r}
-updateSpendingOfCryo <- function(df){
-  df[df$CryoSleep %in% T, c("RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck")] <- 0
-  df$CryoSleep[df$HasSpent %in% T] <- F
-  df
-}
 ship <- updateSpendingOfCryo(ship)
 ```
 
@@ -108,17 +87,12 @@ table(as.factor(ifelse(ship$Age <= 12, 1, 0)), ship$HasSpent)
 ```
 ### Update
 ```{r}
-updateSpendingOfChildren <- function(df){
- df[!is.na(df$Age) & df$Age <= 12, c("RoomService", "FoodCourt", "ShoppingMall", "Spa", "VRDeck")] <- 0
- df <- updateSpending(df)
- df
-}
 ship <- updateSpendingOfChildren(ship)
 ```
 
 ## Link Between Homeplanet and Deck: 
-Deck G implies Earth
-Deck A,B,C,T implies Europa
+* Deck G implies Earth
+* Deck A,B,C,T implies Europa
 ### Evidence
 ```{r}
 ship$Deck <- factor(ship$Deck)
@@ -128,8 +102,7 @@ table(ship$HomePlanet, ship$Deck)
 
 ### Update
 ```{r}
-ship[!is.na(ship$Deck)&ship$Deck == "G" & is.na(ship$HomePlanet), "HomePlanet" ] <- "Earth"
-ship[!is.na(ship$Deck)&ship$Deck %in% c("A", "B", "C", "T") & is.na(ship$HomePlanet), "HomePlanet" ] <- "Europa"
+ship <- updateHomeplanetFromDeck(ship)
 ```
 
 ## Same group implies same side
@@ -137,17 +110,12 @@ ship[!is.na(ship$Deck)&ship$Deck %in% c("A", "B", "C", "T") & is.na(ship$HomePla
 ```{r}
 #check
 uni_GID <- unique(ship$GID)
-unique(sapply(uni_GID, function(i){length(unique(ship$Side[!is.na(ship$Side) & ship$GID ==i]))}))
+unique(sapply(uni_GID, function(i){length(unique(ship$Side[!is.na(ship$Side) & ship$GID == i]))}))
 ```
 
 ### Update
 ```{r}
-uni_side<- sapply(uni_GID,function(i){ship$Side[!is.na(ship$Side) & ship$GID ==i][1]})
-dat <- data.frame(uni_GID, uni_side)
-for(i in uni_GID){
-  ship$Side[is.na(ship$Side) & ship$GID ==i] <-  dat$uni_side[dat$uni_GID ==i]
-}
-rm(dat, uni_side, uni_GID)
+ship <- updateSideFromGID(df)
 ```
 
 ## Surnames are Unique to HomePlanet
@@ -160,18 +128,7 @@ intersect(ship$LastName[!is.na(ship$LastName) & !is.na(ship$HomePlanet) &ship$Ho
 
 ### Update
 ```{r}
-earth_sur <- unique(ship$LastName[!is.na(ship$LastName) & !is.na(ship$HomePlanet) & ship$HomePlanet == "Earth"])
-mars_sur <- unique(ship$LastName[!is.na(ship$LastName) & !is.na(ship$HomePlanet) & ship$HomePlanet == "Mars"])
-europa_sur <- unique(ship$LastName[!is.na(ship$LastName) & !is.na(ship$HomePlanet) & ship$HomePlanet == "Europa"])
-uni_surname <- c(earth_sur, mars_sur, europa_sur)
-dat <- data.frame("home" = factor(c(rep("Earth", length(earth_sur)),
-                           rep("Mars", length(mars_sur)),
-                           rep("Europa", length(europa_sur)))),
-                  "LastName" = uni_surname)
-for(i in uni_surname){
-  ship$HomePlanet[is.na(ship$HomePlanet)&  !is.na(ship$LastName) & ship$LastName ==i] <- dat$home[dat$LastName==i]
-}
-rm(dat, uni_surname)
+ship <- updateHomePlanetFromSurname(ship)
 ```
 
 ## Earth Doesn't Have VIP
@@ -182,7 +139,7 @@ table(ship$HomePlanet, ship$VIP)
 
 ### Update
 ```{r}
-ship$VIP[!is.na(ship$HomePlanet) & is.na(ship$VIP) & ship$HomePlanet == 'Earth'] <- F
+ship <- updateVIPFromHomePlanet(ship)
 ```
 
 ## Deck
@@ -380,5 +337,5 @@ for (i in 1:nrow(ship)){
 
 # Write ship to CSV
 ```{r}
-write.csv(ship, 'ship.csv', row.names=F)
+write.csv(ship, 'data/ship.csv', row.names=F)
 ```
