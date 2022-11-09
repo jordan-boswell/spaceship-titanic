@@ -5,23 +5,35 @@ date: "2022-10-30"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_knit$set(echo = TRUE, root.dir = 'C:/Users/jbos1/Desktop/Projects/Kaggle/spaceship-titanic/data')
+knitr::opts_knit$set(echo = TRUE, root.dir = '/Users/coco/Documents/GitHub/spaceship-titanic/data')
 ```
 
 ```{r}
 library(tidymodels)
 library(missForest)
 library(gbm)
-library(doParallel)
+library(xgboost)
+
 registerDoParallel(cores=12)
 
 ship <- read.csv('ship.csv')
+for (name in names(ship)) {
+    col_type <- typeof(ship[, name])
+    if (col_type == 'character')
+        ship[, name] <- as.factor(ship[, name])
+    else if (col_type == 'logical')
+        ship[, name] <- as.factor(ship[, name])
+    else if (col_type == 'integer')
+        ship[, name] <- as.numeric(ship[, name])
+}
+
 ```
 
 ```{r}
 set.seed(3031190)
-ship_train <- ship[ship$Train,]
-ship_test<- ship[!ship$Train,]
+split <- initial_split(ship)
+ship_test<- na.omit(testing(split))
+ship_train <- na.omit(training(split))
 ```
 
 # Lasso
@@ -36,9 +48,12 @@ ls_mod <- logistic_reg(mode = "classification",
                         mixture = 1 )
 
 #recipe
-ls_recipe <- recipe(Transported ~., data = ship_train) %>% 
-               step_dummy(all_nominal_predictors()) %>%
-               step_interact(all_predictors()) %>%
+model_recipe <- recipe(Transported ~ Spending  , data = ship_train) %>% 
+               step_dummy(all_nominal_predictors()) 
+
+#%>%
+               #step_interact(all_predictors()) 
+ls_recipe <- model_recipe %>%
                step_normalize(all_predictors())
 
 #workflow
@@ -67,6 +82,46 @@ ls_final_fit <- ls_final_wf %>% last_fit(ship_train)
 
 
 # gboost
+```{r}
+xg_mod <- boost_tree(mode = "classification",
+                     engine = "xgboost",
+                     mtry = tune(),
+                     trees = 1000,
+                     min_n = tune(),
+                     tree_depth = tune(),
+                     learn_rate = tune(),
+                     loss_reduction = tune(),
+                     sample_size = tune(),
+                     )
+xg_grid <- grid_latin_hypercube(
+  tree_depth(),
+  min_n(),
+  loss_reduction(),
+  sample_size = sample_prop(),
+  finalize(mtry(), ship_train),
+  learn_rate(),
+  size = 30
+)
+xg_wf<- workflow() %>% add_model(xg_mod) %>% add_recipe(model_recipe)
+xg_res <- xg_wf %>% tune_grid(resamples = ship_fold,
+                              grid =xg_grid)
+select_best(xg_res)
+xg_final_wf <- xg_wf %>%
+    finalize_workflow(select_best(xg_res,"roc_auc"))
+xg_final_fit <- xg_final_wf %>% last_fit(split)
+show_notes(.Last.tune.result)
+```
+
 
 # bart
+```{r}
+bart_mod <-bart(mode = "classification",
+  engine = "dbarts",
+  trees = 100,
+  prior_terminal_node_coef = tune(),
+  prior_terminal_node_expo = NULL,
+  prior_outcome_range = NULL
+)
+bart_wf <- bart
+```
 
