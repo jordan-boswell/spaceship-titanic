@@ -1,3 +1,27 @@
+numDesignMatColsFromDataset <- function(df) {
+  num <- 0
+  for (name in names(df)) {
+    if (is.factor(df[[name]]))
+      num <- num + length(unique(df[[name]][complete.cases(df[[name]])])) - 1
+    else
+      num <- num + 1
+  }
+  num
+}
+
+setColTypesForModeling <- function(df) {
+    for (name in names(df)) {
+        col_type <- typeof(df[, name])
+      if (col_type == 'character')
+          df[, name] <- as.factor(df[, name])
+      else if (col_type == 'logical')
+          df[, name] <- as.factor(df[, name])
+      else if (col_type == 'integer')
+          df[, name] <- as.numeric(df[, name])
+    }
+    df
+}
+
 updateDeckSideNum <- function (df) {
     df$Deck <- as.character(sapply(df$Cabin, function(x){ifelse(is.na(x), NA, strsplit(x, '/')[[1]][1])}))
     df$Num <- as.integer(sapply(df$Cabin, function(x){ifelse(is.na(x), NA, strsplit(x, '/')[[1]][2])}))

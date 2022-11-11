@@ -8,15 +8,7 @@ setwd('C:/Users/jbos1/Desktop/Projects/Kaggle/spaceship-titanic')
 source('analysis/0 Shared Functions.R')
 ship <- read.csv('data/ship.csv')
 
-for (name in names(ship)) {
-    col_type <- typeof(ship[, name])
-    if (col_type == 'character')
-        ship[, name] <- as.factor(ship[, name])
-    else if (col_type == 'logical')
-        ship[, name] <- as.factor(ship[, name])
-    else if (col_type == 'integer')
-        ship[, name] <- as.numeric(ship[, name])
-}
+ship <- setColTypesForModeling(ship)
 
 imputation_cols <- names(ship)[!(names(ship) %in% c('Train', 'PassengerId', 'Cabin', 'Name', 'LastName', 'GroupCabinMode'))]
 set.seed(1)

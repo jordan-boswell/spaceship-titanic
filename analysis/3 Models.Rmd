@@ -7,7 +7,8 @@ date: "2022-10-30"
 ```{r setup, include=FALSE}
 # Thuy: '~/Documents/GitHub/spaceship-titanic'
 # Jordan: 'C:/Users/jbos1/Desktop/Projects/Kaggle/spaceship-titanic'
-knitr::opts_knit$set(echo = TRUE, root.dir = 'C:/Users/jbos1/Desktop/Projects/Kaggle/spaceship-titanic')
+# Jordan Laptop: 'C:\Users\User\Documents\Projects\Kaggle\spaceship-titanic'
+knitr::opts_knit$set(echo = TRUE, root.dir = 'C:\Users\User\Documents\Projects\Kaggle\spaceship-titanic')
 ```
 
 ```{r}
