@@ -1,7 +1,7 @@
 # Thuy: '~/Documents/GitHub/spaceship-titanic'
 # Jordan: 'C:/Users/jbos1/Desktop/Projects/Kaggle/spaceship-titanic'
 # Jordan Laptop: 'C:/Users/User/Documents/Projects/Kaggle/spaceship-titanic'
-setwd('C:/Users/User/Documents/Projects/Kaggle/spaceship-titanic')
+setwd('~/Documents/GitHub/spaceship-titanic')
 
 library(tidymodels)
 library(xgboost)
@@ -80,7 +80,7 @@ xg_grid <- grid_latin_hypercube(
   learn_rate(),
   loss_reduction(),
   sample_size = sample_prop(),
-  size = 2
+  size = 200
 )
 
 set.seed(1)
@@ -98,7 +98,7 @@ savePredictions(test$PassengerId, xg_pred, "xg_1")
 
 ## Random Forest
 rf_spec <- rand_forest(mtry = tune(),
-                       trees = 2000,
+                       trees = tune(),
                        min_n = tune()) %>%
   set_engine('randomForest') %>%
   set_mode('classification')
@@ -110,8 +110,9 @@ rf_wf <- workflow() %>%
 set.seed(1)
 rf_grid <-
   grid_latin_hypercube(mtry() %>% range_set(c(1, num_cols)),
+                       trees(),
                        min_n(),
-                       size = 2)
+                       size = 200)
 
 set.seed(1)
 rf_res <- rf_wf %>%
@@ -137,7 +138,7 @@ ls_rec <- rec
 
 ls_wf <- workflow() %>% add_model(ls_spec) %>% add_recipe(ls_rec)
 
-ls_grid <-   tibble(penalty=10^seq(-4, -1, length.out = 30))
+ls_grid <- tibble(penalty=10^seq(-4, -0.5, length.out = 200))
                                  
 set.seed(1)
 ls_res <- ls_wf %>%
@@ -150,5 +151,5 @@ ls_final_wf <- ls_wf %>%
   finalize_workflow(select_best(ls_res, "accuracy"))
 ls_final_fit <- ls_final_wf %>% fit(train)
 ls_pred <- predict(ls_final_fit, test)
-savePredictions(test$PassengerId, ls_pred, "lasso_2")
+savePredictions(test$PassengerId, ls_pred, "lasso_3")
 # Meta Model
