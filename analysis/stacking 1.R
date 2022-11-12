@@ -6,7 +6,7 @@ setwd('~/Documents/GitHub/spaceship-titanic')
 library(tidymodels)
 library(xgboost)
 library(randomForest)
-
+library(glmnet)
 library(doParallel)
 doParallel::registerDoParallel()
 source('analysis/0 Functions.R')
@@ -53,6 +53,7 @@ set.seed(1)
 folds <- vfold_cv(train[, cols])
 
 # Base Models
+
 ## XGBoost
 xg_spec <- boost_tree(
   mtry = tune(),
@@ -88,7 +89,11 @@ xg_res <- xg_wf %>%
             grid = xg_grid,
             control = control_grid(save_pred = T))
 
-
+### Non-stacking xgboost
+xg_final_wf <- xg_wf %>% 
+  finalize_workflow(select_best(xg_res, "accuracy"))
+xg_final_fit <- xg_final_wf %>% fit(train)
+table(predict(xg_final_fit, test))
 ## Random Forest
 rf_spec <- rand_forest(mtry = tune(),
                        trees = 2000,
@@ -121,12 +126,13 @@ ls_spec <- logistic_reg(
   mixture = 1) %>%
   set_engine ( "glmnet" )
 
-ls_rec <- rec %>% step_interact(all_predictors())
+ls_rec <- rec 
 
 ls_wf <- workflow() %>% add_model(ls_spec) %>% add_recipe(ls_rec)
 
-ls_grid <- grid_latin_hypercube(penalty() 
-                                %>% range_set(c(min(10 ^ seq(10, -2, length = 100)), max(10 ^ seq(10, -2, length = 100)))), size = 30)
+ls_grid <-   tibble(penalty=10^seq(-4, -1, length.out = 30))
+                                 
+                               
 
 ls_res <- ls_wf %>%
   tune_grid(resamples = folds,
@@ -136,6 +142,7 @@ ls_res <- ls_wf %>%
 #Non-stacking Lasso
 final_wf <- ls_wf %>% 
   finalize_workflow(select_best(ls_res, "accuracy"))
-ls_final_fit <- final_wf %>% last_fit(test)
-
+ls_final_fit <- final_wf %>% fit(train)
+ls_pred <-predict(ls_final_fit, test)
+savePredictions(test$PassengerId, ls_pred, "lasso_1")
 # Meta Model
