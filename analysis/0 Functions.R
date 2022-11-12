@@ -124,7 +124,7 @@ updateVIPFromHomePlanet <- function(df) {
 }
 
 savePredictions <- function(passenger_ids, predictions, filename) {
-  write.csv(
+  write.table(
     data.frame(
       PassengerId = passenger_ids,
       Transported = as.character(ifelse(predictions == 'TRUE', 'True', 'False'))
@@ -132,6 +132,7 @@ savePredictions <- function(passenger_ids, predictions, filename) {
     file = paste0('submissions/', filename, '.csv'),
     quote = F,
     row.names = F,
-    index = F
+    col.names = c("PassengerId", "Transported"),
+    sep = ","
   )
 }
