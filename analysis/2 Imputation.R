@@ -32,7 +32,7 @@ write.csv(ship_imputed_without_response, 'data/ship_imputed_without_response.csv
 begin_time <- proc.time()
 set.seed(1)
 rf <- missForest(ship[, c(imputation_cols, 'Transported')], maxiter=30, ntree=1500, parallelize="variables")
-print(begin_time - proc.time())
+print(proc.time() - begin_time)
 ship_imputed_with_response <- rf$ximp
 
 ship_imputed_with_response <- cbind(ship_imputed_with_response, ship[, !(names(ship) %in% names(ship_imputed_with_response))])
