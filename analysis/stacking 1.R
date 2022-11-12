@@ -70,4 +70,16 @@ ls_spec <- logistic_reg(mode = "classification",
                         mixture = 1,
                         set_engine = "glmnet")
 
+ls_rec <- rec %>% step_interact(all_predictors())
+
+ls_wf <- workflow() %>% add_model(ls_spec) %>% add_recipe(ls_rec)
+
+ls_grid <- grid_latin_hypercube(
+  penalty() %>% range_set(10 ^ seq(10,-2,length = 100)), size = 30) 
+
+ls_res <- ls_wf %>%
+  tune_grid(resamples = folds,
+            grid = ls_grid,
+            control = control_grid(save_pred = T))
+
 #meta model
