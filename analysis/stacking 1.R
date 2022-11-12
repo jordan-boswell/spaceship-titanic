@@ -1,7 +1,7 @@
 # Thuy: '~/Documents/GitHub/spaceship-titanic'
 # Jordan: 'C:/Users/jbos1/Desktop/Projects/Kaggle/spaceship-titanic'
 # Jordan Laptop: 'C:/Users/User/Documents/Projects/Kaggle/spaceship-titanic'
-setwd('~/Documents/GitHub/spaceship-titanic')
+setwd('C:/Users/jbos1/Desktop/Projects/Kaggle/spaceship-titanic')
 
 library(tidymodels)
 library(xgboost)
@@ -89,8 +89,13 @@ xg_res <- xg_wf %>%
             grid = xg_grid,
             control = control_grid(save_pred = T))
 
+xg_best <- select_best(xg_res, 'accuracy')
+xg_oos_pred <- do.call(rbind, lapply(xg_res$.predictions, function(x){x[x$.config == xg_best$.config, c('.row', '.pred_TRUE')]}))
+xg_oos_pred <- xg_oos_pred[order(xg_oos_pred$.row), ]
+savePredictions(train$PassengerId, xg_oos_pred$.pred_TRUE > 0.5, 'xg_oos')
+
 xg_final_wf <- xg_wf %>% 
-  finalize_workflow(select_best(xg_res, "accuracy"))
+  finalize_workflow(xg_best)
 xg_final_fit <- xg_final_wf %>% fit(train)
 xg_pred <-predict(xg_final_fit, test)
 savePredictions(test$PassengerId, xg_pred, "xg_1")
@@ -120,6 +125,11 @@ rf_res <- rf_wf %>%
             grid = rf_grid,
             control = control_grid(save_pred = T))
 
+rf_best <- select_best(rf_res, 'accuracy')
+rf_oos_pred <- do.call(rbind, lapply(rf_res$.predictions, function(x){x[x$.config == rf_best$.config, c('.row', '.pred_TRUE')]}))
+rf_oos_pred <- rf_oos_pred[order(rf_oos_pred$.row), ]
+savePredictions(train$PassengerId, rf_oos_pred$.pred_TRUE > 0.5, 'rf_oos')
+
 rf_final_wf <- rf_wf %>% 
   finalize_workflow(select_best(rf_res, "accuracy"))
 rf_final_fit <- rf_final_wf %>% fit(train)
@@ -146,7 +156,11 @@ ls_res <- ls_wf %>%
             grid = ls_grid,
             control = control_grid(save_pred = T))
 
-#Non-stacking Lasso
+ls_best <- select_best(ls_res, 'accuracy')
+ls_oos_pred <- do.call(rbind, lapply(ls_res$.predictions, function(x){x[x$.config == ls_best$.config, c('.row', '.pred_TRUE')]}))
+ls_oos_pred <- ls_oos_pred[order(ls_oos_pred$.row), ]
+savePredictions(train$PassengerId, ls_oos_pred$.pred_TRUE > 0.5, 'ls_oos')
+
 ls_final_wf <- ls_wf %>% 
   finalize_workflow(select_best(ls_res, "accuracy"))
 ls_final_fit <- ls_final_wf %>% fit(train)

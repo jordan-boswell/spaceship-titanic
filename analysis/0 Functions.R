@@ -127,7 +127,7 @@ savePredictions <- function(passenger_ids, predictions, filename) {
   write.table(
     data.frame(
       PassengerId = passenger_ids,
-      Transported = as.character(ifelse(predictions == 'TRUE', 'True', 'False'))
+      Transported = ifelse(is.logical(predictions), as.character(ifelse(predictions, 'True', 'False')), as.character(ifelse(predictions == 'TRUE', 'True', 'False')))
     ),
     file = paste0('submissions/', filename, '.csv'),
     quote = F,
