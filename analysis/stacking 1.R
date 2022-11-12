@@ -1,7 +1,7 @@
 # Thuy: '~/Documents/GitHub/spaceship-titanic'
 # Jordan: 'C:/Users/jbos1/Desktop/Projects/Kaggle/spaceship-titanic'
 # Jordan Laptop: 'C:/Users/User/Documents/Projects/Kaggle/spaceship-titanic'
-setwd('~/Documents/GitHub/spaceship-titanic')
+setwd('C:/Users/User/Documents/Projects/Kaggle/spaceship-titanic')
 
 library(tidymodels)
 library(xgboost)
@@ -80,7 +80,7 @@ xg_grid <- grid_latin_hypercube(
   learn_rate(),
   loss_reduction(),
   sample_size = sample_prop(),
-  size = 30
+  size = 2
 )
 
 set.seed(1)
@@ -89,11 +89,13 @@ xg_res <- xg_wf %>%
             grid = xg_grid,
             control = control_grid(save_pred = T))
 
-### Non-stacking xgboost
 xg_final_wf <- xg_wf %>% 
   finalize_workflow(select_best(xg_res, "accuracy"))
 xg_final_fit <- xg_final_wf %>% fit(train)
-table(predict(xg_final_fit, test))
+xg_pred <-predict(xg_final_fit, test)
+savePredictions(test$PassengerId, xg_pred, "xg_1")
+
+
 ## Random Forest
 rf_spec <- rand_forest(mtry = tune(),
                        trees = 2000,
@@ -102,21 +104,26 @@ rf_spec <- rand_forest(mtry = tune(),
   set_mode('classification')
 
 rf_wf <- workflow() %>%
-  add_model(xg_spec) %>%
+  add_model(rf_spec) %>%
   add_recipe(rec)
 
 set.seed(1)
 rf_grid <-
   grid_latin_hypercube(mtry() %>% range_set(c(1, num_cols)),
-                       trees(),
                        min_n(),
-                       size = 30)
+                       size = 2)
 
 set.seed(1)
 rf_res <- rf_wf %>%
   tune_grid(resamples = folds,
             grid = rf_grid,
             control = control_grid(save_pred = T))
+
+rf_final_wf <- rf_wf %>% 
+  finalize_workflow(select_best(rf_res, "accuracy"))
+rf_final_fit <- rf_final_wf %>% fit(train)
+rf_pred <- predict(rf_final_fit, test)
+savePredictions(test$PassengerId, rf_pred, "rf_1")
 
 
 ## Lasso
@@ -132,17 +139,16 @@ ls_wf <- workflow() %>% add_model(ls_spec) %>% add_recipe(ls_rec)
 
 ls_grid <-   tibble(penalty=10^seq(-4, -1, length.out = 30))
                                  
-                               
-
+set.seed(1)
 ls_res <- ls_wf %>%
   tune_grid(resamples = folds,
             grid = ls_grid,
             control = control_grid(save_pred = T))
 
 #Non-stacking Lasso
-final_wf <- ls_wf %>% 
+ls_final_wf <- ls_wf %>% 
   finalize_workflow(select_best(ls_res, "accuracy"))
-ls_final_fit <- final_wf %>% fit(train)
-ls_pred <-predict(ls_final_fit, test)
-savePredictions(test$PassengerId, ls_pred, "lasso_1")
+ls_final_fit <- ls_final_wf %>% fit(train)
+ls_pred <- predict(ls_final_fit, test)
+savePredictions(test$PassengerId, ls_pred, "lasso_2")
 # Meta Model
