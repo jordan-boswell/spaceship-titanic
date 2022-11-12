@@ -1,11 +1,11 @@
 # Thuy: '~/Documents/GitHub/spaceship-titanic'
 # Jordan: 'C:/Users/jbos1/Desktop/Projects/Kaggle/spaceship-titanic'
 # Jordan Laptop: 'C:/Users/User/Documents/Projects/Kaggle/spaceship-titanic'
-setwd('C:/Users/jbos1/Desktop/Projects/Kaggle/spaceship-titanic')
+setwd('~/Documents/GitHub/spaceship-titanic')
 
 library(tidymodels)
 library(xgboost)
-library(vip)
+
 library(doParallel)
 doParallel::registerDoParallel()
 source('analysis/0 Functions.R')
@@ -20,45 +20,8 @@ ship <- setColTypesForModeling(ship)
 ship_imp_res <- setColTypesForModeling(ship_imp_res)
 ship_imp_nores <- setColTypesForModeling(ship_imp_nores)
 
-cols <-
-  c(
-    'Side',
-    'Deck',
-    'Num',
-    'GID',
-    'HomePlanet',
-    'CryoSleep',
-    'Destination',
-    'Age',
-    'VIP',
-    'RoomService',
-    'FoodCourt',
-    'ShoppingMall',
-    'Spa',
-    'VRDeck',
-    'Transported',
-    'IID',
-    'Spending',
-    'HasSpent',
-    'GroupSize',
-    'GroupNumTransported',
-    'GroupTransportedPct',
-    'CabinSize',
-    'CabinNumTransported',
-    'CabinTransportedPct',
-    'SideNeighbors',
-    'SideNeighborsTransported',
-    'SideNeighborsTransportedPct',
-    'BackNeighbors',
-    'BackNeighborsTransported',
-    'BackNeighborsTransportedPct',
-    'DiagFrontNeighbors',
-    'DiagFrontNeighborsTransported',
-    'DiagFrontNeighborsTransportedPct',
-    'DiagBackNeighbors',
-    'DiagBackNeighborsTransported',
-    'DiagBackNeighborsTransportedPct'
-  )
+cols <- c('Age', 'CabinSize', 'CryoSleep', 'Deck', 'Destination', 'GID', 'GroupSize', 'HasSpent', 'HomePlanet', 'IID', 'Num', 'RoomService', 'ShoppingMall', 'Side', 'Spa', 'Spending', 'Transported', 'VIP', 'VRDeck')
+
 num_cols <- numDesignMatColsFromDataset(ship[, cols])
 
 split_indices <-
@@ -100,7 +63,7 @@ xg_grid <- grid_latin_hypercube(
   learn_rate(),
   loss_reduction(),
   sample_size = sample_prop(),
-  size = 30
+  size = 3
 )
 
 set.seed(1)

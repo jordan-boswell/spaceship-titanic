@@ -122,3 +122,17 @@ updateVIPFromHomePlanet <- function(df) {
   df$VIP[!is.na(df$HomePlanet) & df$HomePlanet == 'Earth'] <- F
   df
 }
+
+savePredictions <- function(passenger_ids, predictions, filename) {
+  write.table(
+    data.frame(
+      PassengerId = passenger_ids,
+      Transported = as.character(ifelse(predictions == 'TRUE', 'True', 'False'))
+    ),
+    file = paste0('submissions/', filename, '.csv'),
+    quote = F,
+    row.names = F,
+    col.names = c("PassengerId", "Transported"),
+    sep = ","
+  )
+}
