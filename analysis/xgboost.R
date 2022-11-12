@@ -1,6 +1,6 @@
 # Thuy: '~/Documents/GitHub/spaceship-titanic'
 # Jordan: 'C:/Users/jbos1/Desktop/Projects/Kaggle/spaceship-titanic'
-# Jordan Laptop: 'C:\Users\User\Documents\Projects\Kaggle\spaceship-titanic'
+# Jordan Laptop: 'C:/Users/User/Documents/Projects/Kaggle/spaceship-titanic'
 setwd('C:/Users/jbos1/Desktop/Projects/Kaggle/spaceship-titanic')
 
 library(tidymodels)
@@ -8,7 +8,7 @@ library(xgboost)
 library(vip)
 library(doParallel)
 doParallel::registerDoParallel()
-source('analysis/0 Shared Functions.R')
+source('analysis/0 Functions.R')
 
 # read in data
 ship <- read.csv('data/ship.csv')
@@ -20,10 +20,52 @@ ship <- setColTypesForModeling(ship)
 ship_imp_res <- setColTypesForModeling(ship_imp_res)
 ship_imp_nores <- setColTypesForModeling(ship_imp_nores)
 
-cols <- c('Side', 'Deck', 'Num', 'GID', 'HomePlanet', 'CryoSleep', 'Destination', 'Age', 'VIP', 'RoomService', 'FoodCourt', 'ShoppingMall', 'Spa', 'VRDeck', 'Transported', 'IID', 'Spending', 'HasSpent', 'GroupSize', 'GroupNumTransported', 'GroupTransportedPct', 'CabinSize', 'CabinNumTransported', 'CabinTransportedPct', 'SideNeighbors', 'SideNeighborsTransported', 'SideNeighborsTransportedPct', 'BackNeighbors', 'BackNeighborsTransported', 'BackNeighborsTransportedPct', 'DiagFrontNeighbors', 'DiagFrontNeighborsTransported', 'DiagFrontNeighborsTransportedPct', 'DiagBackNeighbors', 'DiagBackNeighborsTransported', 'DiagBackNeighborsTransportedPct')
-num_cols <- numDesignMatColsFromDataset(ship[ ,cols])
+cols <-
+  c(
+    'Side',
+    'Deck',
+    'Num',
+    'GID',
+    'HomePlanet',
+    'CryoSleep',
+    'Destination',
+    'Age',
+    'VIP',
+    'RoomService',
+    'FoodCourt',
+    'ShoppingMall',
+    'Spa',
+    'VRDeck',
+    'Transported',
+    'IID',
+    'Spending',
+    'HasSpent',
+    'GroupSize',
+    'GroupNumTransported',
+    'GroupTransportedPct',
+    'CabinSize',
+    'CabinNumTransported',
+    'CabinTransportedPct',
+    'SideNeighbors',
+    'SideNeighborsTransported',
+    'SideNeighborsTransportedPct',
+    'BackNeighbors',
+    'BackNeighborsTransported',
+    'BackNeighborsTransportedPct',
+    'DiagFrontNeighbors',
+    'DiagFrontNeighborsTransported',
+    'DiagFrontNeighborsTransportedPct',
+    'DiagBackNeighbors',
+    'DiagBackNeighborsTransported',
+    'DiagBackNeighborsTransportedPct'
+  )
+num_cols <- numDesignMatColsFromDataset(ship[, cols])
 
-split_indices <- list(analysis = which(ship$Train == 'TRUE'), assessment = which(ship$Train == 'FALSE'))
+split_indices <-
+  list(
+    analysis = which(ship$Train == 'TRUE'),
+    assessment = which(ship$Train == 'FALSE')
+  )
 splits <- make_splits(split_indices, ship[, cols])
 ship_train <- training(splits)
 ship_test <- testing(splits)
@@ -63,11 +105,9 @@ xg_grid <- grid_latin_hypercube(
 
 set.seed(1)
 xg_res <- xg_wf %>%
-  tune_grid(
-    resamples = folds,
-    grid = xg_grid,
-    control = control_grid(save_pred = T)
-  )
+  tune_grid(resamples = folds,
+            grid = xg_grid,
+            control = control_grid(save_pred = T))
 
 xg_final_wf <- xg_wf %>%
   finalize_workflow(select_best(xg_res, 'accuracy'))
@@ -75,4 +115,12 @@ xg_final_wf <- xg_wf %>%
 xg_final_fit <- xg_final_wf %>% fit(ship_train)
 
 predictions <- collect_predictions(xg_final_fit)$Transported
-write.csv(data.frame(PassengerId = ship$PassengerId[ship$Train == 'FALSE'], Transported = ifelse(predictions == 'TRUE', 'True', 'False')), file = 'submissions/basic_xg.csv', quote = F, row.names = F)
+write.csv(
+  data.frame(
+    PassengerId = ship$PassengerId[ship$Train == 'FALSE'],
+    Transported = ifelse(predictions == 'TRUE', 'True', 'False')
+  ),
+  file = 'submissions/basic_xg.csv',
+  quote = F,
+  row.names = F
+)

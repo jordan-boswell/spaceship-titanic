@@ -9,14 +9,21 @@ output: html_document
 ```{r setup, include=FALSE}
 # Thuy: '~/Documents/GitHub/spaceship-titanic'
 # Jordan: 'C:/Users/jbos1/Desktop/Projects/Kaggle/spaceship-titanic'
-knitr::opts_knit$set(echo = TRUE, root.dir = 'C:/Users/jbos1/Desktop/Projects/Kaggle/spaceship-titanic')
-source('analysis/0 Shared Functions.R')
+# Jordan Laptop: 'C:/Users/User/Documents/Projects/Kaggle/spaceship-titanic'
+library(visdat)
+library(naniar)
+library(nullabor)
+library(ggplot2)
+theme_set(theme_classic())
+source('0 Functions.R')
+knitr::opts_knit$set(echo = TRUE, root.dir = 'C:/Users/User/Documents/Projects/Kaggle/spaceship-titanic')
 ```
 
 # Read data and format columns
 ```{r}
 train <- read.csv("data/train.csv", na.strings=c("NA", ""))
 test <- read.csv("data/test.csv", na.strings=c("NA", ""))
+original_cols <- names(train)
 train$Train <- TRUE
 test$Train <- FALSE
 test$Transported <- NA
@@ -33,6 +40,14 @@ create_base_columns <- function(df){
 }
 ship <- create_base_columns(ship)
 ship$Transported <- as.logical(ship$Transported)
+```
+
+# High-Level Visualization & Missing Data Exploration
+```{r}
+vis_dat(ship[, original_cols])
+vis_miss(ship[, setdiff(original_cols, 'Transported')])
+mcar_test(ship)
+mcar_test(ship[, setdiff(original_cols, 'Transported')])
 ```
 
 # Add Columns
@@ -52,7 +67,17 @@ ship$LastName <- sapply(ship$Name, function(x){strsplit(x,split = " ")}[[1]][2])
 ```
 
 # EDA
-## test$GID and train$GID are disjoint
+## GID
+### GID values form a contiguous (integer) range from 1 to 9280
+```{r}
+for(i in min(ship$GID):max(ship$GID)){
+  if (!(i %in% ship$GID)){
+    print(i)
+  }
+}
+```
+
+### test$GID and train$GID are disjoint
 ```{r}
 intersect(ship$GID[ship$Train], ship$GID[!ship$Train])
 ```
@@ -102,7 +127,7 @@ table(ship$HomePlanet, ship$Deck)
 
 ### Update
 ```{r}
-ship <- updateHomeplanetFromDeck(ship)
+ship <- updateHomePlanetFromDeck(ship)
 ```
 
 ## Same group implies same side
@@ -115,7 +140,7 @@ unique(sapply(uni_GID, function(i){length(unique(ship$Side[!is.na(ship$Side) & s
 
 ### Update
 ```{r}
-ship <- updateSideFromGID(df)
+ship <- updateSideFromGID(ship)
 ```
 
 ## Surnames are Unique to HomePlanet
@@ -172,39 +197,61 @@ tapply(ship$Age, ship$Deck, summary)
 ## Group
 ### Create Separate Group Dataset
 ```{r}
-splits <- split(ship, ship$GID)
-ship_groups <- data.frame(t(
-    sapply(splits, function(x){c(
-        GID = x$GID[1],
-        GroupSize = nrow(x),
-        GroupNumCabinsNA = nrow(subset(x, is.na(Cabin))),
-        GroupNumCabins = ifelse(nrow(x) == 1, 1, length(unique(x$Cabin[!is.na(x$Cabin)]))),
-        GroupNumTransported = sum(x$Transported, na.rm=T),
-        GroupNumNotTransported = sum(x$Transported==FALSE, na.rm=T),
-        GroupTransportedPct = ifelse(sum(!is.na(x$Transported) == 0), NA, sum(x$Transported == T, na.rm=T)/sum(!is.na(x$Transported))),
-        GroupCabinMode = ifelse(sum(is.na(x$Cabin)) == nrow(x), NA, names(sort(table(x$Cabin), decreasing=T))[1]),
-        GroupNumInCabinMode = ifelse(sum(is.na(x$Cabin)) == nrow(x), NA, sum(!is.na(x$Cabin) & x$Cabin == names(sort(table(x$Cabin), decreasing=T))[1])),
-        GroupNumHomePlanets = ifelse(nrow(x) == 1, 1, length(unique(x$HomePlanet[!is.na(x$HomePlanet)]))),
-        GroupNumDestinations = ifelse(nrow(x) == 1, 1, length(unique(x$Destination[!is.na(x$Destination)]))),
-        GroupHomePlanetMode = ifelse(sum(is.na(x$HomePlanet)) == nrow(x), NA, names(sort(table(x$HomePlanet), decreasing=T))[1]),
-        GroupDestinationMode = ifelse(sum(is.na(x$Destination)) == nrow(x), NA, names(sort(table(x$Destination), decreasing=T))[1])
-    )})
-))
-ship_groups$GID <- as.integer(ship_groups$GID)
-ship_groups$GroupSize <- as.integer(ship_groups$GroupSize)
-ship_groups$GroupNumCabinsNA <- as.integer(ship_groups$GroupNumCabinsNA)
-ship_groups$GroupNumCabins <- as.integer(ship_groups$GroupNumCabins)
-ship_groups$GroupNumTransported <- as.integer(ship_groups$GroupNumTransported)
-ship_groups$GroupNumNotTransported <- as.integer(ship_groups$GroupNumNotTransported)
-ship_groups$GroupNumInCabinMode <- as.integer(ship_groups$GroupNumInCabinMode)
-ship_groups$GroupNumHomePlanets <- as.integer(ship_groups$GroupNumHomePlanets)
-ship_groups$GroupNumDestinations <- as.integer(ship_groups$GroupNumDestinations)
-rm(splits)
+updateGroups <- function(df) {
+  splits <- split(df, df$GID)
+  df_groups <- data.frame(t(sapply(splits, function(x) {
+    c(
+      GID = x$GID[1],
+      GroupTrain = x$Train[1],
+      GroupSize = nrow(x),
+      GroupNumCabinsNA = nrow(subset(x, is.na(Cabin))),
+      GroupNumCabins = ifelse(nrow(x) == 1, 1, length(unique(x$Cabin[!is.na(x$Cabin)]))),
+      GroupNumTransported = sum(x$Transported, na.rm = T),
+      GroupNumNotTransported = sum(x$Transported == FALSE, na.rm = T),
+      #GroupTransportedPct = ifelse(sum(!is.na(x$Transported) == 0), NA, sum(x$Transported == T, na.rm=T)/sum(!is.na(x$Transported))),
+      GroupCabinMode = ifelse(sum(is.na(x$Cabin)) == nrow(x), NA, names(sort(
+        table(x$Cabin), decreasing = T
+      ))[1]),
+      GroupNumInCabinMode = ifelse(sum(is.na(x$Cabin)) == nrow(x), NA, sum(
+        !is.na(x$Cabin) &
+          x$Cabin == names(sort(table(x$Cabin), decreasing = T))[1]
+      )),
+      GroupNumHomePlanets = ifelse(nrow(x) == 1, 1, length(unique(x$HomePlanet[!is.na(x$HomePlanet)]))),
+      GroupNumDestinations = ifelse(nrow(x) == 1, 1, length(unique(x$Destination[!is.na(x$Destination)]))),
+      GroupHomePlanetMode = ifelse(sum(is.na(x$HomePlanet)) == nrow(x), NA, names(sort(
+        table(x$HomePlanet), decreasing = T
+      ))[1]),
+      GroupDestinationMode = ifelse(sum(is.na(x$Destination)) == nrow(x), NA, names(sort(
+        table(x$Destination), decreasing = T
+      ))[1])
+    )
+  })))
+  df_groups$GID <- as.integer(df_groups$GID)
+  df_groups$GroupTrain <- as.logical(df_groups$GroupTrain)
+  df_groups$GroupSize <- as.integer(df_groups$GroupSize)
+  df_groups$GroupNumCabinsNA <- as.integer(df_groups$GroupNumCabinsNA)
+  df_groups$GroupNumCabins <- as.integer(df_groups$GroupNumCabins)
+  df_groups$GroupNumTransported <-
+    as.integer(df_groups$GroupNumTransported)
+  df_groups$GroupNumNotTransported <-
+    as.integer(df_groups$GroupNumNotTransported)
+  df_groups$GroupNumInCabinMode <-
+    as.integer(df_groups$GroupNumInCabinMode)
+  df_groups$GroupNumHomePlanets <-
+    as.integer(df_groups$GroupNumHomePlanets)
+  df_groups$GroupNumDestinations <-
+    as.integer(df_groups$GroupNumDestinations)
+  df <- merge(df, df_groups, by = 'GID', all.x = T)
+  # todo
+  return(list(df = df, df_groups = df_groups))
+}
 ```
 
 ### Add Group Columns
 ```{r}
-ship <- merge(ship, ship_groups, by='GID', all.x=T)
+group_results <- updateGroups(ship)
+ship <- group_results$df
+ship_groups <- group_results$df_groups
 ```
 
 ## Cabin
@@ -242,6 +289,7 @@ ship_cabins <- data.frame(t(
         Deck = x$Deck[1],
         Side = x$Side[1],
         Num = x$Num[1],
+        CabinNumNATransported = sum(is.na(x$Transported)),
         CabinNumTransported = sum(x$Transported, na.rm=T),
         CabinNumNotTransported = sum(x$Transported==FALSE, na.rm=T),
         CabinTransportedPct = ifelse(sum(!is.na(x$Transported) == 0), NA, sum(x$Transported == T, na.rm=T)/sum(!is.na(x$Transported))),
@@ -250,6 +298,7 @@ ship_cabins <- data.frame(t(
 ))
 ship_cabins$CabinSize <- as.integer(ship_cabins$CabinSize)
 ship_cabins$Num <- as.integer(ship_cabins$Num)
+ship_cabins$CabinNumNATransported <- as.integer(ship_cabins$CabinNumNATransported)
 ship_cabins$CabinNumTransported <- as.integer(ship_cabins$CabinNumTransported)
 ship_cabins$CabinNumNotTransported <- as.integer(ship_cabins$CabinNumNotTransported)
 ship_cabins$CabinTransportedPct <- as.numeric(ship_cabins$CabinTransportedPct)
@@ -297,6 +346,24 @@ rm(splits, front_neighbor, side_neighbor, back_neighbor, diag_front_neighbor, di
 ### Add Cabin Columns
 ```{r}
 ship <- merge(ship, ship_cabins, by=c('Cabin', 'Side', 'Deck', 'Num'), all.x=T)
+```
+
+### GID is independent of test/train split
+```{r}
+bin_width <- nrow(ship_groups) / 20
+d <- rorschach(null_permute('GroupTrain'), ship_groups, n = 20, p = 0)
+ggplot(data=d[!d$GroupTrain, ], aes(x=GID)) +
+  geom_histogram(breaks=seq(min(ship_groups$GID) + bin_width, by = bin_width, length.out = 19)) +
+  facet_wrap(~ .sample)
+
+d <- lineup(null_permute('GroupTrain'), ship_groups, n = 20)
+ggplot(data=d[!d$GroupTrain, ], aes(x=GID)) +
+  geom_histogram(breaks=seq(min(ship_groups$GID) + bin_width, by = bin_width, length.out = 19)) +
+  facet_wrap(~ .sample)
+
+attr(d, "pos")
+
+pvisual(0, 1)
 ```
 
 ### Percentage of Cabins Having the Same CryoSleep

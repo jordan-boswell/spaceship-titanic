@@ -4,13 +4,14 @@ registerDoParallel(cores=12)
 
 # Thuy: '~/Documents/GitHub/spaceship-titanic'
 # Jordan: 'C:/Users/jbos1/Desktop/Projects/Kaggle/spaceship-titanic'
-setwd('C:/Users/jbos1/Desktop/Projects/Kaggle/spaceship-titanic')
-source('analysis/0 Shared Functions.R')
+# Jordan Laptop: 'C:/Users/User/Documents/Projects/Kaggle/spaceship-titanic'
+setwd('C:/Users/User/Documents/Projects/Kaggle/spaceship-titanic')
+source('analysis/0 Functions.R')
 ship <- read.csv('data/ship.csv')
 
 ship <- setColTypesForModeling(ship)
 
-imputation_cols <- names(ship)[!(names(ship) %in% c('Train', 'PassengerId', 'Cabin', 'Name', 'LastName', 'GroupCabinMode'))]
+imputation_cols <- c('Age', 'CabinSize', 'CryoSleep', 'Deck', 'Destination', 'GID', 'GroupSize', 'HasSpent', 'HomePlanet', 'IID', 'Num', 'RoomService', 'ShoppingMall', 'Side', 'Spa', 'Spending', 'Transported', 'VIP', 'VRDeck')
 set.seed(1)
 # Note: ntree values of 10,20,30,40,50 took 126,292,493,571,718 seconds, respectively
 begin_time <- proc.time()
