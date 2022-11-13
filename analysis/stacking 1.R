@@ -96,6 +96,7 @@ savePredictions(train$PassengerId, xg_oos_pred$.pred_TRUE, 'xg_oos')
 
 xg_final_wf <- xg_wf %>% 
   finalize_workflow(xg_best)
+# mtry = 20, trees = 1117, min_n = 2, tree_depth = 5, learn_rate = 0.0196, loss_reduction = 0.000000414, sample_size = 0.840
 xg_final_fit <- xg_final_wf %>% fit(train)
 xg_pred <-predict(xg_final_fit, test)
 savePredictions(test$PassengerId, xg_pred, "xg_1")
