@@ -172,25 +172,16 @@ savePredictions(test$PassengerId, ls_pred, "lasso_3")
 xg_oos_pred <- read.csv('submissions/xg_oos.csv')
 rf_oos_pred <- read.csv('submissions/rf_oos.csv')
 ls_oos_pred <- read.csv('submissions/ls_oos.csv')
-oos_pred <- data.frame(PredXG = c(xg_oos_pred$Transported, xg_pred), PredRF = c(rf_oos_pred$Transported, rf_pred), PredLS = c(ls_oos_pred$Transported, ls_pred))
-meta_ship <- cbind(ship_imp_nores, oos_pred)
-
-meta_cols <- c('PredXG', 'PredRF', 'PredLS', 'Transported')
-
-meta_split_indices <-
-  list(
-    analysis = which(meta_ship$Train == 'TRUE'),
-    assessment = which(meta_ship$Train == 'FALSE')
-  )
-meta_splits <- make_splits(meta_split_indices, meta_ship[, meta_cols])
-meta_ship_train <- training(meta_splits)
-meta_ship_test <- testing(meta_splits)
+oos_pred <- data.frame(PredXG = xg_oos_pred$Transported, PredRF = rf_oos_pred$Transported, PredLS = ls_oos_pred$Transported)
+test_pred <- data.frame(PredXG = xg_pred, PredRF = rf_pred, PredLS = ls_pred)
+meta_train <- cbind(train, oos_pred)
+meta_test <- cbind(test, test_pred)
 
 meta_spec <- logistic_reg()
-meta_rec <- recipe(Transported ~ PredXG + PredRF + PredLS, data = meta_ship_train)
+meta_rec <- recipe(Transported ~ PredXG + PredRF + PredLS, data = meta_train)
 meta_wf <- workflow() %>% add_model(meta_spec) %>% add_recipe(meta_rec)
-meta_final_fit <- meta_wf %>% fit(meta_ship_train)
+meta_final_fit <- meta_wf %>% fit(meta_train)
 
-meta_pred <- (meta_final_fit %>% predict(meta_ship_test, type = 'prob'))$.pred_TRUE
+meta_pred <- (meta_final_fit %>% predict(meta_test, type = 'prob'))$.pred_TRUE
 
-savePredictions(ship_imp_nores[ship_imp_nores$Train == 'FALSE', 'PassengerId'], meta_pred > 0.5, 'meta_1')
+savePredictions(ship_imp_nores[ship_imp_nores$Train == 'FALSE', 'PassengerId'], meta_pred > 0.5, 'meta_2')
