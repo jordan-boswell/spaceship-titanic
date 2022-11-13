@@ -173,7 +173,7 @@ savePredictions(test$PassengerId, ls_pred, "lasso_3")
 xg_oos_pred <- read.csv('submissions/xg_oos.csv')
 rf_oos_pred <- read.csv('submissions/rf_oos.csv')
 ls_oos_pred <- read.csv('submissions/ls_oos.csv')
-oos_pred <- data.frame(PredXG = xg_oos_pred$Transported>0.5, PredRF = rf_oos_pred$Transported>0.5, PredLS = ls_oos_pred$Transported>0.5)
+oos_pred <- data.frame(PredXG = xg_oos_pred$Transported, PredRF = rf_oos_pred$Transported, PredLS = ls_oos_pred$Transported)
 test_pred <- data.frame(PredXG = xg_pred, PredRF = rf_pred, PredLS = ls_pred)
 meta_train <- cbind(train, oos_pred)
 meta_test <- cbind(test, test_pred)
@@ -185,4 +185,4 @@ meta_final_fit <- meta_wf %>% fit(meta_train)
 
 meta_pred <- (meta_final_fit %>% predict(meta_test, type = 'prob'))$.pred_TRUE
 
-savePredictions(ship_imp_nores[ship_imp_nores$Train == 'FALSE', 'PassengerId'], meta_pred > 0.5, 'meta_2')
+savePredictions(ship_imp_nores[ship_imp_nores$Train == 'FALSE', 'PassengerId'], meta_pred, 'meta_2')
