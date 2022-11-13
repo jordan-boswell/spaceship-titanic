@@ -133,7 +133,7 @@ savePredictions <- function(passenger_ids, predictions, filename) {
   write.table(
     data.frame(
       PassengerId = passenger_ids,
-      Transported = predictions
+      Transported = transported
     ),
     file = paste0('submissions/', filename, '.csv'),
     quote = F,

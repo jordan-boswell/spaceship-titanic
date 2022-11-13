@@ -96,9 +96,8 @@ savePredictions(train$PassengerId, xg_oos_pred$.pred_TRUE, 'xg_oos')
 
 xg_final_wf <- xg_wf %>% 
   finalize_workflow(xg_best)
-# mtry = 20, trees = 1117, min_n = 2, tree_depth = 5, learn_rate = 0.0196, loss_reduction = 0.000000414, sample_size = 0.840
 xg_final_fit <- xg_final_wf %>% fit(train)
-xg_pred <-predict(xg_final_fit, test)
+xg_pred <-predict(xg_final_fit, test, type = 'prob')$.pred_TRUE
 savePredictions(test$PassengerId, xg_pred, "xg_1")
 
 
@@ -134,7 +133,7 @@ savePredictions(train$PassengerId, rf_oos_pred$.pred_TRUE, 'rf_oos')
 rf_final_wf <- rf_wf %>% 
   finalize_workflow(select_best(rf_res, "accuracy"))
 rf_final_fit <- rf_final_wf %>% fit(train)
-rf_pred <- predict(rf_final_fit, test)
+rf_pred <- predict(rf_final_fit, test, type = 'prob')$.pred_TRUE
 savePredictions(test$PassengerId, rf_pred, "rf_1")
 
 
@@ -165,6 +164,33 @@ savePredictions(train$PassengerId, ls_oos_pred$.pred_TRUE, 'ls_oos')
 ls_final_wf <- ls_wf %>% 
   finalize_workflow(select_best(ls_res, "accuracy"))
 ls_final_fit <- ls_final_wf %>% fit(train)
-ls_pred <- predict(ls_final_fit, test)
+ls_pred <- predict(ls_final_fit, test, type = 'prob')$.pred_TRUE
 savePredictions(test$PassengerId, ls_pred, "lasso_3")
+
+
 # Meta Model
+xg_oos_pred <- read.csv('submissions/xg_oos.csv')
+rf_oos_pred <- read.csv('submissions/rf_oos.csv')
+ls_oos_pred <- read.csv('submissions/ls_oos.csv')
+oos_pred <- data.frame(PredXG = c(xg_oos_pred$Transported, xg_pred), PredRF = c(rf_oos_pred$Transported, rf_pred), PredLS = c(ls_oos_pred$Transported, ls_pred))
+meta_ship <- cbind(ship_imp_nores, oos_pred)
+
+meta_cols <- c('PredXG', 'PredRF', 'PredLS', 'Transported')
+
+meta_split_indices <-
+  list(
+    analysis = which(meta_ship$Train == 'TRUE'),
+    assessment = which(meta_ship$Train == 'FALSE')
+  )
+meta_splits <- make_splits(meta_split_indices, meta_ship[, meta_cols])
+meta_ship_train <- training(meta_splits)
+meta_ship_test <- testing(meta_splits)
+
+meta_spec <- logistic_reg()
+meta_rec <- recipe(Transported ~ PredXG + PredRF + PredLS, data = meta_ship_train)
+meta_wf <- workflow() %>% add_model(meta_spec) %>% add_recipe(meta_rec)
+meta_final_fit <- meta_wf %>% fit(meta_ship_train)
+
+meta_pred <- (meta_final_fit %>% predict(meta_ship_test, type = 'prob'))$.pred_TRUE
+
+savePredictions(ship_imp_nores[ship_imp_nores$Train == 'FALSE', 'PassengerId'], meta_pred > 0.5, 'meta_1')
