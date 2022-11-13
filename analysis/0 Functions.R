@@ -124,10 +124,16 @@ updateVIPFromHomePlanet <- function(df) {
 }
 
 savePredictions <- function(passenger_ids, predictions, filename) {
+    if (is.character(predictions))
+        transported <- as.character(ifelse(predictions == 'TRUE', 'True', 'False'))
+    else if (is.logical(predictions))
+        transported <- as.character(ifelse(predictions, 'True', 'False'))
+    else
+        transported <- predictions
   write.table(
     data.frame(
       PassengerId = passenger_ids,
-      Transported = ifelse(is.logical(predictions), as.character(ifelse(predictions, 'True', 'False')), as.character(ifelse(predictions == 'TRUE', 'True', 'False')))
+      Transported = predictions
     ),
     file = paste0('submissions/', filename, '.csv'),
     quote = F,

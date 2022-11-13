@@ -92,7 +92,7 @@ xg_res <- xg_wf %>%
 xg_best <- select_best(xg_res, 'accuracy')
 xg_oos_pred <- do.call(rbind, lapply(xg_res$.predictions, function(x){x[x$.config == xg_best$.config, c('.row', '.pred_TRUE')]}))
 xg_oos_pred <- xg_oos_pred[order(xg_oos_pred$.row), ]
-savePredictions(train$PassengerId, xg_oos_pred$.pred_TRUE > 0.5, 'xg_oos')
+savePredictions(train$PassengerId, xg_oos_pred$.pred_TRUE, 'xg_oos')
 
 xg_final_wf <- xg_wf %>% 
   finalize_workflow(xg_best)
@@ -128,7 +128,7 @@ rf_res <- rf_wf %>%
 rf_best <- select_best(rf_res, 'accuracy')
 rf_oos_pred <- do.call(rbind, lapply(rf_res$.predictions, function(x){x[x$.config == rf_best$.config, c('.row', '.pred_TRUE')]}))
 rf_oos_pred <- rf_oos_pred[order(rf_oos_pred$.row), ]
-savePredictions(train$PassengerId, rf_oos_pred$.pred_TRUE > 0.5, 'rf_oos')
+savePredictions(train$PassengerId, rf_oos_pred$.pred_TRUE, 'rf_oos')
 
 rf_final_wf <- rf_wf %>% 
   finalize_workflow(select_best(rf_res, "accuracy"))
@@ -159,7 +159,7 @@ ls_res <- ls_wf %>%
 ls_best <- select_best(ls_res, 'accuracy')
 ls_oos_pred <- do.call(rbind, lapply(ls_res$.predictions, function(x){x[x$.config == ls_best$.config, c('.row', '.pred_TRUE')]}))
 ls_oos_pred <- ls_oos_pred[order(ls_oos_pred$.row), ]
-savePredictions(train$PassengerId, ls_oos_pred$.pred_TRUE > 0.5, 'ls_oos')
+savePredictions(train$PassengerId, ls_oos_pred$.pred_TRUE, 'ls_oos')
 
 ls_final_wf <- ls_wf %>% 
   finalize_workflow(select_best(ls_res, "accuracy"))
