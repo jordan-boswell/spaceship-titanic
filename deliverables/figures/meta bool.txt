@@ -1,0 +1,10 @@
+|term        |  estimate| std.error| statistic| p.value|
+|:-----------|---------:|---------:|---------:|-------:|
+|(Intercept) | -1.761598| 0.0439644| -40.06873|       0|
+|PredXG1     |  1.447335| 0.0919311|  15.74369|       0|
+|PredRF1     |  1.026606| 0.0939257|  10.92998|       0|
+|PredLS1     |  1.037773| 0.0767479|  13.52184|       0|
+
+Degrees of Freedom: 8692 Total (i.e. Null);  8689 Residual
+Null Deviance:	    12050 
+Residual Deviance: 7876 	AIC: 7884
