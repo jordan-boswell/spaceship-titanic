@@ -1,0 +1,4 @@
+| mtry| trees| min_n| tree_depth| learn_rate| loss_reduction| sample_size|.metric  |.estimator |      mean|  n|   std_err|.config                |
+|----:|-----:|-----:|----------:|----------:|--------------:|-----------:|:--------|:----------|---------:|--:|---------:|:----------------------|
+|    4|   554|    20|          7|   0.085253|          9e-06|   0.1620079|accuracy |binary     | 0.7930524| 10| 0.0045809|Preprocessor1_Model023 |
+|    4|   554|    20|          7|   0.085253|          9e-06|   0.1620079|roc_auc  |binary     | 0.8803457| 10| 0.0039146|Preprocessor1_Model023 |
