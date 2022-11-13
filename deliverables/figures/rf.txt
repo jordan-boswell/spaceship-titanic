@@ -1,0 +1,15 @@
+| mtry| trees| min_n|.config                |
+|----:|-----:|-----:|:----------------------|
+|    7|  1683|     5|Preprocessor1_Model141 |
+
+        OOB estimate of  error rate: 19.3%
+Confusion matrix:
+      FALSE TRUE class.error
+FALSE  3542  773   0.1791425
+TRUE    905 3473   0.2067154
+
+| mtry| trees| min_n|.metric  |.estimator |      mean|  n|   std_err|.config                |
+|----:|-----:|-----:|:--------|:----------|---------:|--:|---------:|:----------------------|
+|    7|  1683|     5|accuracy |binary     | 0.8092738| 10| 0.0028373|Preprocessor1_Model141 |
+|    7|  1683|     5|roc_auc  |binary     | 0.8951372| 10| 0.0027567|Preprocessor1_Model141 |
+
