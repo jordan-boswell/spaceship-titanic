@@ -82,7 +82,7 @@ for(i in min(ship$GID):max(ship$GID)){
 intersect(ship$GID[ship$Train], ship$GID[!ship$Train])
 ```
 
-## CryoSleep iff 0 spending
+## CryoSleep implies 0 spending
 ### Evidence
 ```{r}
 ftable(HasSpent~CryoSleep, data=ship)
