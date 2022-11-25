@@ -1,7 +1,7 @@
 # Thuy: '~/Documents/GitHub/spaceship-titanic'
 # Jordan: 'C:/Users/jbos1/Desktop/Projects/Kaggle/spaceship-titanic'
 # Jordan Laptop: 'C:/Users/User/Documents/Projects/Kaggle/spaceship-titanic'
-setwd('C:/Users/User/Documents/Projects/Kaggle/spaceship-titanic')
+setwd('C:/Users/jbos1/Desktop/Projects/Kaggle/spaceship-titanic')
 
 library(tidymodels)
 library(vip)
