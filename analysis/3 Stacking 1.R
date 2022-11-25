@@ -170,9 +170,9 @@ savePredictions(test$PassengerId, ls_pred, "lasso_3")
 
 
 # Meta Model
-xg_oos_pred <- read.csv('submissions/xg_oos.csv')
-rf_oos_pred <- read.csv('submissions/rf_oos.csv')
-ls_oos_pred <- read.csv('submissions/ls_oos.csv')
+xg_oos_pred <- read.csv('predictions/xg_oos.csv')
+rf_oos_pred <- read.csv('predictions/rf_oos.csv')
+ls_oos_pred <- read.csv('predictions/ls_oos.csv')
 oos_pred <- data.frame(PredXG = xg_oos_pred$Transported, PredRF = rf_oos_pred$Transported, PredLS = ls_oos_pred$Transported)
 test_pred <- data.frame(PredXG = xg_pred, PredRF = rf_pred, PredLS = ls_pred)
 meta_train <- cbind(train, oos_pred)

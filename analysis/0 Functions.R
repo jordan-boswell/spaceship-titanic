@@ -135,7 +135,7 @@ savePredictions <- function(passenger_ids, predictions, filename) {
       PassengerId = passenger_ids,
       Transported = transported
     ),
-    file = paste0('submissions/', filename, '.csv'),
+    file = paste0('predictions/', filename, '.csv'),
     quote = F,
     row.names = F,
     col.names = c("PassengerId", "Transported"),
