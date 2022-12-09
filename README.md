@@ -8,3 +8,4 @@ Some highlights include:
 * Missing data imputation with missForest
 * LASSO, random forest, XGBoost, and BART models with tuned hyperparameters
 * Multiple stacking methods
+* Comparison of all models using various metrics
