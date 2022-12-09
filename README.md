@@ -6,5 +6,5 @@ Some highlights include:
 * Real-time 3d visualization of the data using Unreal Engine 5
 * Missing data analysis, including visualization and Little's MCAR test
 * Missing data imputation with missForest
-* LASSO, BART, and XGBoost
+* LASSO, random forest, XGBoost, and BART models with tuned hyperparameters
 * Multiple stacking methods
